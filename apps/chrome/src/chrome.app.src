@@ -1,0 +1,20 @@
+{application, chrome,
+ [
+  {description, "Chrome orchestration and management service"},
+  {vsn, "0.1.0"},
+  {modules, [
+      chrome_app,
+      chrome_sup,
+      chrome_srv,
+      chrome_utils_yml
+  ]},
+  {registered, [chrome_srv]},
+  {applications, [
+      kernel,
+      stdlib,
+      lager,
+      common_lib
+  ]},
+  {mod, {chrome_app, []}},
+  {env, []}
+ ]}.

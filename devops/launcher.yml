@@ -1,0 +1,110 @@
+raptor-launcer:
+  version: 2.0
+  home: "/Users/matkat"
+  timezone: "Europe/Sofia"
+  lang: "en_US.UTF-8"
+  database_url: "postgres://admin:1234@localhost:5432/vehicles"
+
+docker:
+  enabled: true
+  compose_workdir: "~/Software/docker-env"
+
+  commands:
+    start_docker_linux: "sudo systemctl start docker"
+    stop_docker_linux: "sudo systemctl stop docker"
+
+    # macOS
+    start_docker_mac: "open --background -a Docker"
+    stop_docker_mac: 'killall "Docker Desktop" "com.docker.backend" 2>/dev/null || true'
+
+    is_alive: "docker info > /dev/null 2>&1 && echo ok || echo error"
+    list_containers: "docker ps --format '{{.Names}}'"
+    is_container_running: "docker inspect -f '{{.State.Running}}' {{container}}"
+
+    start_compose: "cd {{workdir}} && docker compose up -d"
+    stop_compose: "cd {{workdir}} && docker compose down"
+    restart_compose: "cd {{workdir}} && docker compose restart"
+
+    start_container: "cd {{workdir}} && docker compose up -d --no-recreate {{container}}"
+    stop_container: "cd {{workdir}} && docker compose stop {{container}}"
+    restart_container: "cd {{workdir}} && docker compose restart {{container}}"
+
+  containers:
+    - "kafka-server"
+    - "postgres-server"
+    - "web-admin"
+
+kafka:
+  container: "kafka-server"
+  bootstrap_server: "localhost:9092"
+
+  configs:
+    retention:
+      ms: 86400000 # 24 часа
+      bytes: 104857600 # 100 MB
+
+  topics:
+    mobile_de: "raptor.mobile_de"
+    metadata: "raptor.metadata"
+
+  commands:
+    list_topics: "docker exec {{container}} kafka-topics.sh --list --bootstrap-server {{bootstrap}}"
+
+    create_topic: "docker exec {{container}} kafka-topics.sh --create \
+      --topic {{topic}} --partitions 1 --replication-factor 1 \
+      --bootstrap-server {{bootstrap}} --if-not-exists"
+
+    alter_topic: "docker exec {{container}} kafka-configs.sh --alter \
+      --bootstrap-server {{bootstrap}} --entity-type topics \
+      --entity-name {{topic}} \
+      --add-config retention.ms={{retention_ms}},retention.bytes={{retention_bytes}}"
+
+    describe_topic: "docker exec {{container}} kafka-configs.sh --describe \
+      --bootstrap-server {{bootstrap}} --entity-type topics --entity-name {{topic}}"
+
+chrome:
+  enabled: true
+  port: 9223
+  version_url: "http://127.0.0.1:{{port}}/json/version"
+  start_cmd: "devops/bin/start-chrome.sh"
+  stop_cmd: "pkill -f remote-debugging-port={{port}} || true"
+  grep_cmd: "pgrep -fa 'chrome.*remote-debugging-port={{port}}' || echo 'not found'"
+
+services:
+  mobile_de:
+    enabled: true
+    home: "~/Software/docker-env/mobile_de"
+    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-mobile_de.sh"
+    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-mobile_de.sh"
+    grep_cmd: "pgrep -fa 'mobile_de' || echo 'not found'"
+    log_file: "~/Software/Erlang/raptor-launcher/logs/mobile_de.log"
+
+  crawler:
+    enabled: true
+    home: "~/Software/docker-env/crawler"
+    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-crawler.sh"
+    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-crawler.sh"
+    args: "autouncle.ro"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+    log_file: "~/Software/Erlang/raptor-launcher/logs/crawler.log"
+
+  raptor:
+    enabled: true
+    home: "~/Software/JavaScript/mobile-crawler"
+    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-raptor.sh"
+    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-raptor.sh"
+    args: "mobile.de"
+    grep_cmd: "pgrep -fa 'launcher.js --site mobile.de' || echo 'not found'"
+    log_file: "~/Software/Erlang/raptor-launcher/logs/raptor.log"
+
+slack:
+  webhooks:
+    status: "https://hooks.slack.com/services/.../status"
+    all_services: "https://hooks.slack.com/services/.../all"
+    job_status: "https://hooks.slack.com/services/.../job"
+    errors: "https://hooks.slack.com/services/.../errors"
+    test: "https://hooks.slack.com/services/.../test"
+
+logging:
+  dir: "~/Software/Erlang/raptor-launcher/logs"
+  orchestrator: "orchestrator.out"

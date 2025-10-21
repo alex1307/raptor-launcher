@@ -1,0 +1,17 @@
+rebar.lock
+_build/
+deps/
+erl_crash.dump
+*.ez
+*.log
+.DS_Store
+*.beam
+*.dump
+*.plt
+*.rel
+*.appup
+*.tar.gz
+*.tgz
+*.zip
+*.bak
+*~

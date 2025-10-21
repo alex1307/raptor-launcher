@@ -1,0 +1,22 @@
+
+%%%-------------------------------------------------------------------
+%%% @author Alexander Todorov(alexander.todorov@ayagasha.com)
+%%% @copyright (C) 2022, Ayagasha Enterprises Ltd.
+%%% Company Ayagasha Enterprises Ltd.
+%%% Created On: 16-Dec-2022
+%%% @doc
+%%%
+%%% @end
+%%%-------------------------------------------------------------------
+{application, main, [
+  {description, "tcp fsm client app"},
+  {vsn, "1.0"},
+  {registered, []},
+  {applications, [
+    kernel,
+    stdlib,
+    sasl,
+    lager
+  ]},
+  {mod, {main, []}}]
+}.

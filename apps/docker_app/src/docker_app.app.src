@@ -1,0 +1,20 @@
+{application, docker_app,
+ [
+  {description, "Docker orchestration and management service"},
+  {vsn, "0.1.0"},
+  {modules, [
+      docker_app_app,
+      docker_app_sup,
+      docker_srv,
+      docker_utils_yml
+  ]},
+  {registered, [docker_srv]},
+  {applications, [
+      kernel,
+      stdlib,
+      lager,
+      common_lib
+  ]},
+  {mod, {docker_app_app, []}},
+  {env, []}
+ ]}.

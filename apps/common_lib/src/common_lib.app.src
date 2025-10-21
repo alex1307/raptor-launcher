@@ -1,0 +1,15 @@
+{application, common_lib,
+ [
+  {description, "Common utility library for all Raptor apps"},
+  {vsn, "0.1.0"},
+  {modules, [
+      yml_utils
+  ]},
+  {applications, [
+      kernel,
+      stdlib,
+      yamerl,
+      lager
+  ]},
+  {env, []}
+ ]}.

@@ -1,0 +1,20 @@
+{application, kafka,
+ [
+  {description, "Kafka orchestration and management service"},
+  {vsn, "0.1.0"},
+  {modules, [
+      kafka_app,
+      kafka_sup,
+      kafka_srv,
+      kafka_utils_yml
+  ]},
+  {registered, [kafka_srv]},
+  {applications, [
+      kernel,
+      stdlib,
+      lager,
+      common_lib
+  ]},
+  {mod, {kafka_app, []}},
+  {env, []}
+ ]}.

@@ -1,0 +1,5 @@
+-sname ${SNAME}
+-setcookie ${COOKIES}
+-s $APP_NAME
+-start_epmd false
+-epmd_module epmdless_client
