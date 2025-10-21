@@ -1,0 +1,20 @@
+{application, raptors,
+ [
+  {description, "Raptors orchestration and management service"},
+  {vsn, "0.1.0"},
+  {modules, [
+      raptors_app,
+      raptors_sup,
+      raptors_srv,
+      raptors_utils
+  ]},
+  {registered, [raptors_srv]},
+  {applications, [
+      kernel,
+      stdlib,
+      lager,
+      common_lib
+  ]},
+  {mod, {raptors_app, []}},
+  {env, []}
+ ]}.

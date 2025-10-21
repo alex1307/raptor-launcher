@@ -7,7 +7,7 @@ raptor-launcer:
 
 docker:
   enabled: true
-  compose_workdir: "~/Software/docker-env"
+  compose_workdir: "${DOCKER_COMPOSE_WORKDIR}"
 
   commands:
     start_docker_linux: "sudo systemctl start docker"
@@ -70,41 +70,63 @@ chrome:
   stop_cmd: "pkill -f remote-debugging-port={{port}} || true"
   grep_cmd: "pgrep -fa 'chrome.*remote-debugging-port={{port}}' || echo 'not found'"
 
-services:
+raptor-services:
   mobile_de:
     enabled: true
-    home: "~/Software/docker-env/mobile_de"
-    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-mobile_de.sh"
-    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-mobile_de.sh"
+    start_script: "devops/bin/start-mobile_de.sh"
+    stop_script: "devops/bin/stop-mobile_de.sh"
     grep_cmd: "pgrep -fa 'mobile_de' || echo 'not found'"
-    log_file: "~/Software/Erlang/raptor-launcher/logs/mobile_de.log"
 
-  crawler:
+  crawler-ro:
     enabled: true
-    home: "~/Software/docker-env/crawler"
-    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-crawler.sh"
-    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-crawler.sh"
-    args: "autouncle.ro"
+    start_script: "devops/bin/start-crawler.sh autouncle.ro"
+    stop_script: "devops/bin/stop-crawler.sh"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
-    log_file: "~/Software/Erlang/raptor-launcher/logs/crawler.log"
+
+  crawler-fr:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.fr"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-it:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.it"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-nl:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.nl"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-de:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.de"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-pl:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.pl"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-ch:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh autouncle.ch"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
+
+  crawler-bg:
+    enabled: true
+    start_script: "devops/bin/start-crawler.sh mobile.bg"
+    stop_script: "devops/bin/stop-crawler.sh"
+    grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   raptor:
     enabled: true
-    home: "~/Software/JavaScript/mobile-crawler"
-    start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-raptor.sh"
-    stop_script: "~/Software/Erlang/raptor-launcher/devops/bin/stop-raptor.sh"
-    args: "mobile.de"
+    start_script: "devops/bin/start-raptor.sh"
+    stop_script: "devops/bin/stop-raptor.sh"
     grep_cmd: "pgrep -fa 'launcher.js --site mobile.de' || echo 'not found'"
-    log_file: "~/Software/Erlang/raptor-launcher/logs/raptor.log"
-
-slack:
-  webhooks:
-    status: "https://hooks.slack.com/services/.../status"
-    all_services: "https://hooks.slack.com/services/.../all"
-    job_status: "https://hooks.slack.com/services/.../job"
-    errors: "https://hooks.slack.com/services/.../errors"
-    test: "https://hooks.slack.com/services/.../test"
-
-logging:
-  dir: "~/Software/Erlang/raptor-launcher/logs"
-  orchestrator: "orchestrator.out"

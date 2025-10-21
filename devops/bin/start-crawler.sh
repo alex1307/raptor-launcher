@@ -10,10 +10,20 @@ fi
 
 SOURCE="$1"
 
-cd "$MOBILE_DE_HOME"
+OS_TYPE="$(uname)"
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  CRAWLER_HOME="${MAC_CRAWLER_HOME:-/Users/matkat/Software/docker-env/crawler}"
+elif [[ "$OS_TYPE" == "Linux" ]]; then
+  CRAWLER_HOME="${UBUNTU_CRAWLER_HOME:-/home/matkat/crawler-app}"
+else
+  echo "Unsupported OS: $OS_TYPE"
+  exit 1
+fi
+
+cd "$CRAWLER_HOME"
 mkdir -p _logs
 
-exec >> "$MOBILE_DE_HOME/_logs/crawler.log" 2>&1
+exec >> "$CRAWLER_HOME/_logs/crawler.log" 2>&1
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting crawler for source '$SOURCE'..."
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Working directory: $(pwd)..."

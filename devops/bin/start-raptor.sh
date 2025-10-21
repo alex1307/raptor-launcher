@@ -10,6 +10,16 @@ fi
 
 SOURCE="$1"
 
+OS_TYPE="$(uname)"
+if [[ "$OS_TYPE" == "Darwin" ]]; then
+  RAPTOR_HOME="${MAC_RAPTOR_HOME:-/Users/matkat/Software/JavaScript/mobile-crawler}"
+elif [[ "$OS_TYPE" == "Linux" ]]; then
+  RAPTOR_HOME="${UBUNTU_RAPTOR_HOME:-/home/matkat/Software/JavaScript/mobile-crawler}"
+else
+  echo "Unsupported OS: $OS_TYPE"
+  exit 1
+fi  
+
 cd "$RAPTOR_HOME"
 mkdir -p logs
 

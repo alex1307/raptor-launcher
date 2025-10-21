@@ -7,7 +7,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    Map = yml_utils:yml2map("/Users/matkat/Software/Erlang/raptor-launcher/devops/launcher.yml"),
+    Map = yml_utils:yml2map("devops/launcher.yml"),
     KafkaMap = maps:get("kafka", Map),
     State = #{yml => KafkaMap},
     lager:info("Kafka service initialized with config: ~p", [KafkaMap]),
