@@ -1,0 +1,19 @@
+%%%-------------------------------------------------------------------
+%% @doc launcher public API
+%% @end
+%%%-------------------------------------------------------------------
+
+-module(launcher_app).
+
+-behaviour(application).
+
+-export([start/2, stop/1]).
+
+start(_StartType, _StartArgs) ->
+    supervisor_manager:start_link(),
+    supervisor_manager:start_child(resource_manager_sup, resource_manager_fsm, start_link, []).
+
+stop(_State) ->
+    ok.
+
+%% internal functions

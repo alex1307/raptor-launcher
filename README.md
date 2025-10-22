@@ -65,7 +65,7 @@ kafka:
 chrome:
   enabled: true
   port: 9223
-  start_script: "~/Software/Erlang/raptor-launcher/devops/bin/start-chrome.sh"
+  start_script: "devops/bin/start-chrome.sh"
   stop_cmd: "pkill -f remote-debugging-port=9223 || true"
 ```
 

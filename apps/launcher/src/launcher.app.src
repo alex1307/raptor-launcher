@@ -1,0 +1,23 @@
+{application, launcher,
+ [
+  {description, "Resource and service orchestration and management service"},
+  {vsn, "0.1.0"},
+  {modules, [
+      launcher_app,
+      resource_manager_fsm
+  ]},
+  {registered, [resource_manager_fsm]},
+  {applications, [
+      kernel,
+      stdlib,
+      lager,
+      chrome,
+      common_lib,
+      docker_app,
+      kafka,
+      raptors
+
+  ]},
+  {mod, {launcher_app, []}},
+  {env, []}
+ ]}.

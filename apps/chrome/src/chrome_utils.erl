@@ -17,11 +17,9 @@ is_chrome_running(ConfigMap) ->
     Port = maps:get("port", ConfigMap),
     Cmd = maps:get("grep_cmd", ConfigMap),
     ActualCmd = string:replace(Cmd, "{{port}}", integer_to_list(Port)),
-    lager:info("Checking Chrome process: ~s", [ActualCmd]),
     case os:cmd(ActualCmd) of
         "not found\n" -> false;
         Output ->
-            lager:info("Chrome grep result: ~s", [string:trim(Output)]),
             not lists:member("not found", string:lowercase(Output))
     end.
 

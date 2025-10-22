@@ -22,16 +22,25 @@ start_link() ->
 -spec stop(pid()) -> ok.
 stop(Pid) ->
     gen_server:call(Pid, stop).
+
 -spec status(pid()) -> {ok, map()} | {error, string()}.
 status(Pid) ->
     gen_server:call(Pid, status).
 
+
+-spec start_chrome() -> ok.
 start_chrome() ->
     gen_server:call(?MODULE, start_chrome).
+
+-spec stop_chrome() -> ok.
 stop_chrome() ->
     gen_server:call(?MODULE, stop_chrome).
+
+-spec is_chrome_running() -> boolean().
 is_chrome_running() ->
     gen_server:call(?MODULE, is_chrome_running).
+
+-spec status() -> {ok, map()} | {error, string()}.
 status() ->
     gen_server:call(?MODULE, chrome_status).
 
