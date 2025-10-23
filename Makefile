@@ -26,6 +26,10 @@ release:
 # 	rebar3 eunit
 	rebar3 release
 
+release-prod:
+	rebar3 clean compile
+	rebar3 as prod release
+
 #
 
 # blank:
@@ -81,14 +85,23 @@ release:
 # 	@echo "          \t - name should match a file in rel/<name>.config"
 # 	@echo "          \t - previous_rel should match a directory under rel/"
 
-.PHONY: build run
+.PHONY: build run run-dev run-prod
 
 build:
 	rebar3 compile
 
-run:
+run: run-dev
+
+run-dev:
 	set -a; \
 	source devops/env/raptor.env; \
 	source devops/env/.env; \
 	set +a; \
 	rebar3 shell
+
+run-prod:
+	set -a; \
+	source devops/env/raptor.env; \
+	source devops/env/.env; \
+	set +a; \
+	rebar3 as prod shell
