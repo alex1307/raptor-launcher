@@ -21,10 +21,12 @@ clean:
 	find . -name "erl_crash.dump" -exec rm {} \;
 	find . -name "#*#" -exec rm {} \;
 
-release:
+release-dev:
 	rebar3 clean compile
 # 	rebar3 eunit
 	rebar3 release
+
+release: release-prod
 
 release-prod:
 	rebar3 clean compile
@@ -97,11 +99,11 @@ run-dev:
 	source devops/env/raptor.env; \
 	source devops/env/.env; \
 	set +a; \
-	rebar3 shell
+	rebar3 shell --config config/sys.config
 
 run-prod:
 	set -a; \
 	source devops/env/raptor.env; \
 	source devops/env/.env; \
 	set +a; \
-	rebar3 as prod shell
+	rebar3 shell --config config/sys.prod.config
