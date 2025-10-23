@@ -14,6 +14,7 @@ It enables unified startup, monitoring, restart, and status tracking across macO
 ```
 apps/
 ├── main_app/         # Central supervisor and orchestrator
+├── launcher/         # Resource FSM orchestration (resource_manager_fsm, docker_fsm, chrome_fsm)
 ├── common_lib/       # Shared utilities (cmd_utils, yml_utils, env expansion)
 ├── docker_app/       # Docker daemon and Compose management
 ├── kafka/            # Kafka topic configuration and monitoring
@@ -93,6 +94,127 @@ devops/env/raptor.env
   - `stop_service(Name)`
   - `is_service_running(Name)`
   - `list_services()`
+
+---
+
+## 🎯 Launcher FSMs (Resource Orchestration)
+
+### Overview
+
+The `launcher` app provides a layered FSM architecture for orchestrating infrastructure dependencies.  
+It follows a **hierarchical state machine pattern** where:
+
+- `resource_manager_fsm` is the top-level orchestrator
+- `docker_fsm` manages Docker, Kafka, and Postgres lifecycle
+- `chrome_fsm` manages Chrome lifecycle
+
+All FSMs use **condition-based states** (not action-based), meaning states represent system status, not actions to perform.
+
+### 🔧 resource_manager_fsm
+
+**Purpose:** High-level orchestrator that coordinates network checks and child FSM startup.
+
+**State Flow:**
+```
+check_network → network_ok → waiting_docker → waiting_chrome → ready
+```
+
+**Responsibilities:**
+
+- Verify network connectivity via `network_utils:check_all/0`
+- Wait for `{docker_ready, Pid}` message from docker_fsm (started by supervisor)
+- Wait for `{chrome_ready, Pid}` message from chrome_fsm (started by supervisor)
+- Notify `service_orchestrator` when all resources ready
+- Provide status via `gen_statem:call(resource_manager_fsm, get_status)`
+
+**Design Features:**
+
+- Retry logic with MAX_RETRIES=10 for network failures
+- Slack notifications at each stage
+- Delegates all detailed health checks to child FSMs
+- **Does NOT start child FSMs** - relies on supervisor to start them (proper OTP design)
+
+### 🐳 docker_fsm
+
+**Purpose:** Manages Docker infrastructure stack (Docker daemon, Kafka, Postgres) independently.
+
+**State Flow:**
+```
+check_docker → docker_is_running → 
+check_kafka → kafka_is_running → kafka_is_configured → 
+check_postgres → postgres_is_running → 
+ready → monitoring
+```
+
+**Responsibilities:**
+
+- Start Docker Compose via `docker_srv:start_compose/0`
+- Verify Docker daemon is running
+- Start and verify Kafka container
+- Configure Kafka topics and settings
+- Start and verify Postgres container
+- Continuous health monitoring in `monitoring` state
+- Auto-recovery: transitions back to appropriate check state on failure
+- Notify resource_manager_fsm via `gen_statem:cast` when ready
+
+**Health Monitoring:**
+
+- Polls every 30 seconds in monitoring state
+- Checks Docker daemon, Kafka container, Postgres container
+- Automatically recovers failed components
+
+### 🪞 chrome_fsm
+
+**Purpose:** Manages Chrome browser lifecycle independently.
+
+**State Flow:**
+```
+check_chrome → chrome_is_running → ready → monitoring
+```
+
+**Responsibilities:**
+
+- Start Chrome via `chrome_srv:start_chrome/0` (OS-specific)
+- Verify Chrome is responding on debug port 9223
+- Continuous health monitoring in `monitoring` state
+- Auto-recovery: restarts Chrome if health check fails
+- Notify resource_manager_fsm via `gen_statem:cast` when ready
+
+**Health Monitoring:**
+
+- Polls every 30 seconds in monitoring state
+- Checks Chrome debug port via HTTP
+- Automatically restarts Chrome on failure
+
+### Communication Pattern
+
+```
+launcher_app (supervisor)
+    │
+    ├─► docker_fsm:start_link()    (supervised)
+    │
+    ├─► chrome_fsm:start_link()    (supervised)
+    │
+    └─► resource_manager_fsm:start_link()    (supervised)
+            │
+            ├◄─── {docker_ready, Pid} ──── docker_fsm
+            │
+            ├◄─── {chrome_ready, Pid} ──── chrome_fsm
+            │
+            └───► service_orchestrator (cast: resources_ready)
+```
+
+**Key Point:** All three FSMs are started by the supervisor. The resource_manager_fsm does NOT start the child FSMs - it only orchestrates by waiting for their ready messages. This follows proper OTP supervision principles.
+
+### Benefits of This Architecture
+
+- **Proper OTP Design:** Supervisor manages process lifecycle, not peer processes
+- **Separation of Concerns:** Each FSM manages its own domain
+- **Independent Monitoring:** Child FSMs monitor their own health
+- **Fault Tolerance:** Each FSM can recover independently via supervisor restart
+- **Testability:** Each FSM can be tested in isolation
+- **Clear State Semantics:** Condition-based states are self-documenting
+- **Scalability:** Easy to add new FSMs (e.g., postgres_fsm, kafka_fsm)
 
 ---
 

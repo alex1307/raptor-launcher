@@ -4,9 +4,11 @@
   {vsn, "0.1.0"},
   {modules, [
       launcher_app,
-      resource_manager_fsm
+      resource_manager_fsm,
+      docker_fsm,
+      chrome_fsm
   ]},
-  {registered, [resource_manager_fsm]},
+  {registered, [resource_manager_fsm, docker_fsm, chrome_fsm]},
   {applications, [
       kernel,
       stdlib,

@@ -6,9 +6,10 @@
       raptors_app,
       raptors_sup,
       raptors_srv,
+      raptor_service_fsm,
       raptors_utils
   ]},
-  {registered, [raptors_srv]},
+  {registered, [raptors_srv, raptor_service_fsm]},
   {applications, [
       kernel,
       stdlib,

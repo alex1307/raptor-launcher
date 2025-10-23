@@ -20,38 +20,34 @@ os_cmd_with_timeout(Cmd, Timeout) ->
         {error, timeout}
     end.
 
+
 -spec execute(Cmd :: string()) -> {ok, string()} | {error, string()} | error.
 execute(Cmd) when is_list(Cmd) ->
-    case cmd_utils:os_cmd_with_timeout(Cmd, 5000) of
+    case cmd_utils:os_cmd_with_timeout(Cmd, 10000) of
         {error, timeout} ->
             {error, "command timeout"};
 
         Output when is_list(Output) ->
             Lower = string:lowercase(Output),
-            case string:find(Lower, ?ERROR) of
-                nomatch ->
+
+            %% Universal success markers — work for Docker, Chrome, Kafka, etc.
+            SuccessMarkers = [
+                "already exists", "completed", "ok",
+                "running", "started", "stopped",
+                "up to date", "synonyms=", "dynamic configs for topic"
+            ],
+
+            case lists:any(fun(M) -> string:find(Lower, M) =/= nomatch end, SuccessMarkers) of
+                true ->
                     {ok, Output};
-                _ ->
-                    TrimmedOutput = string:trim(Output),
-                    case unicode:characters_to_list(TrimmedOutput) of
-                        {error, _, _} ->
-                            case unicode:characters_to_list(TrimmedOutput, latin1) of
-                                Result when is_list(Result) ->
-                                    {error, Result};
-                                _ ->
-                                    {error, "unicode conversion failed"}
-                            end;
-                        {incomplete, _, _} ->
-                            case unicode:characters_to_list(TrimmedOutput, latin1) of
-                                Result when is_list(Result) ->
-                                    {error, Result};
-                                _ ->
-                                    {error, "unicode conversion failed"}
-                            end;
-                        Result ->
-                            {error, Result}
+                false ->
+                    case string:find(Lower, "error") of
+                        nomatch ->
+                            {ok, Output};
+                        _ ->
+                            {error, string:trim(Output)}
                     end
             end
     end;
 execute(_Cmd) ->
-    error.   
+    error.

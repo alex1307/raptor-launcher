@@ -23,4 +23,39 @@ init([]) ->
         [raptors_srv]
     },
 
-    {ok, {{one_for_one, 5, 10}, [RaptorsSrv]}}.
+    %% Crawler Scheduler - периодично стартира crawler services
+    %% Интервал: 24 часа = 24 * 60 * 60 * 1000 = 86400000 ms
+    CrawlerScheduler = {
+        autouncle_crawler_scheduler_sup,  % Уникално ID в supervisor
+        {raptor_scheduler, start_link, [autouncle_crawler, 86_400_000]},  % 24 часа
+        permanent,
+        5000,
+        worker,
+        [raptor_scheduler]
+    },
+
+    RaptorScheduler = {
+        raptor_scheduler_sup,  % Уникално ID в supervisor
+        {raptor_scheduler, start_link, [raptor, 86_400_000]},  % 24 часа
+        permanent,
+        5000,
+        worker,
+        [raptor_scheduler]
+    },
+
+    MobileBGScheduler = {
+        mobile_bg_scheduler_sup,  % УНИКАЛНО ID! (беше дубликат)
+        {raptor_scheduler, start_link, [mobile_bg_crawler, 86_400_000]},  % 24 часа
+        permanent,
+        5000,
+        worker,
+        [raptor_scheduler]
+    },
+
+
+
+    {ok, {{one_for_one, 5, 10}, [
+        RaptorsSrv, 
+        CrawlerScheduler, 
+        MobileBGScheduler,  % Оправено име
+        RaptorScheduler]}}.

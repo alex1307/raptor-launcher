@@ -13,9 +13,15 @@
 %% ----------------------------------------------------------------------------
 
 %% List topics
--spec list_topics(map()) -> {ok, string()} | {error, string()}.
+-spec list_topics(map()) -> {ok, []} | {error, string()}.
 list_topics(ConfigMap) ->
-    exec_kafka_cmd(ConfigMap, "list_topics", #{}).
+    TopicMap = maps:get("topics", ConfigMap, []),
+    lager:info("Listing Kafka topics from config: ~p", [TopicMap]),
+    Keys = maps:keys(TopicMap),
+    lager:info("Found Kafka topics: ~p", [Keys]),
+    Topics = lists:map(fun(K) -> maps:get(K, TopicMap) end, Keys),
+    lager:info("Kafka topics: ~p", [Topics]),
+    {ok, Topics}.
 
 %% Describe topic
 -spec describe_topic(map(), string()) -> {ok, string()} | {error, string()}.

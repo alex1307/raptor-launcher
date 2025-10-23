@@ -14,7 +14,7 @@ OS_TYPE="$(uname)"
 if [[ "$OS_TYPE" == "Darwin" ]]; then
   RAPTOR_HOME="${MAC_RAPTOR_HOME:-/Users/matkat/Software/JavaScript/mobile-crawler}"
 elif [[ "$OS_TYPE" == "Linux" ]]; then
-  RAPTOR_HOME="${UBUNTU_RAPTOR_HOME:-/home/matkat/Software/JavaScript/mobile-crawler}"
+  RAPTOR_HOME="${UBUNTU_RAPTOR_HOME:-/home/matkat/mobile-crawler}"
 else
   echo "Unsupported OS: $OS_TYPE"
   exit 1
@@ -26,6 +26,6 @@ mkdir -p logs
 exec >> "$RAPTOR_HOME/logs/raptor.log" 2>&1
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Raptor for $SOURCE..."
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Raptor 2.0 from $(pwd)..."
-nohup node src/boot/launcher.js --site $SOURCE >> ./logs/raptor.log 2>&1 &
+nohup make start >> ./logs/raptor.log 2>&1 &
 
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Raptor started."

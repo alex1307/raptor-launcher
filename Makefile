@@ -89,5 +89,6 @@ build:
 run:
 	set -a; \
 	source devops/env/raptor.env; \
+	source devops/env/.env; \
 	set +a; \
 	rebar3 shell

@@ -48,18 +48,21 @@ kafka:
     metadata: "raptor.metadata"
 
   commands:
-    list_topics: "docker exec {{container}} kafka-topics.sh --list --bootstrap-server {{bootstrap}}"
+    list_topics: "docker exec {{container}} /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server {{bootstrap}}"
 
-    create_topic: "docker exec {{container}} kafka-topics.sh --create \
+    create_topic:
+      "docker exec {{container}} /opt/kafka/bin/kafka-topics.sh --create \
       --topic {{topic}} --partitions 1 --replication-factor 1 \
       --bootstrap-server {{bootstrap}} --if-not-exists"
 
-    alter_topic: "docker exec {{container}} kafka-configs.sh --alter \
+    alter_topic:
+      "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --alter \
       --bootstrap-server {{bootstrap}} --entity-type topics \
       --entity-name {{topic}} \
       --add-config retention.ms={{retention_ms}},retention.bytes={{retention_bytes}}"
 
-    describe_topic: "docker exec {{container}} kafka-configs.sh --describe \
+    describe_topic:
+      "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --describe \
       --bootstrap-server {{bootstrap}} --entity-type topics --entity-name {{topic}}"
 
 chrome:
@@ -127,6 +130,6 @@ raptor-services:
 
   raptor:
     enabled: true
-    start_script: "devops/bin/start-raptor.sh"
+    start_script: "devops/bin/start-raptor.sh mobile.de"
     stop_script: "devops/bin/stop-raptor.sh"
-    grep_cmd: "pgrep -fa 'launcher.js --site mobile.de' || echo 'not found'"
+    grep_cmd: "pgrep -fa 'make start' || echo 'not found'"

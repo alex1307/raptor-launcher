@@ -6,7 +6,8 @@
     list_services/0,
     is_service_running/1,
     start_service/1,
-    stop_service/1
+    stop_service/1,
+    get_services/0
 ]).
 
 %%--------------------------------------------------------------------
@@ -45,6 +46,9 @@ handle_call({status, ServiceName}, _From, State) ->
     IsRunning = raptors_utils:is_service_running(RaptorServicesMap, ServiceName),
     Status = if IsRunning -> "running"; true -> "stopped" end,
     {reply, Status, State};
+handle_call(get_services, _From, State) ->
+    #{yml := RaptorServicesMap} = State,
+    {reply, RaptorServicesMap, State};
 handle_call(_Request, _From, State) ->
     {reply, {error, unknown_request}, State}.
 
@@ -77,3 +81,7 @@ start_service(ServiceName) ->
 -spec(stop_service(string()) -> {ok, string()} | {error, string()}).
 stop_service(ServiceName) ->
     gen_server:call(?MODULE, {stop_service, ServiceName}).  
+
+-spec(get_services() -> map()).
+get_services() ->
+    gen_server:call(?MODULE, get_services).
