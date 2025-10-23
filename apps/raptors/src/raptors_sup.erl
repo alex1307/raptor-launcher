@@ -1,6 +1,7 @@
 %%%-------------------------------------------------------------------
-%% @doc raptors top level supervisor.
-%% @end
+%% # Raptor's top level supervisor
+%%
+%% This module implements the top-level supervisor for the raptors application.
 %%%-------------------------------------------------------------------
 
 -module(raptors_sup).

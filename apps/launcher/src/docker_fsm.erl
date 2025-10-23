@@ -175,12 +175,16 @@ kafka_is_configured(enter, _OldState, S) ->
     {keep_state, S, [{state_timeout, 0, check}]};
 kafka_is_configured(state_timeout, check, S = #state{kafka_configured = true}) ->
     lager:info("docker_fsm: kafka configuration already applied, skipping"),
+    %% Notify mobile_de_fsm even if config was already applied
+    notify_mobile_de_kafka_ready(),
     {next_state, check_postgres, reset_retries(S)};
 kafka_is_configured(state_timeout, check, S0) ->
     lager:info("docker_fsm: verifying kafka configuration"),
     case ensure_kafka_configuration() of
         ok ->
             lager:info("docker_fsm: kafka configuration verified"),
+            %% Notify mobile_de_fsm that Kafka is ready
+            notify_mobile_de_kafka_ready(),
             S1 = set_kafka_configured(S0, true),
             {next_state, check_postgres, reset_retries(S1)};
         {error, Reason} ->
@@ -272,7 +276,7 @@ retry_or_fail(State, S) ->
     {keep_state, S, [{state_timeout, ?RETRY_MS * 2, retry}]}.
 
 ensure_kafka_configuration() ->
-    case catch kafka_srv:configure_all_topics() of
+    case kafka_srv:configure_all_topics() of
         ok ->
             ok;
         {error, Reason} ->
@@ -283,4 +287,14 @@ ensure_kafka_configuration() ->
         Other ->
             lager:warning("docker_fsm: unexpected kafka config result: ~p", [Other]),
             {error, Other}
+    end.
+
+%% Notify mobile_de_fsm that Kafka is ready
+notify_mobile_de_kafka_ready() ->
+    case whereis(mobile_de_fsm) of
+        undefined ->
+            lager:warning("docker_fsm: mobile_de_fsm not started yet, cannot notify");
+        Pid when is_pid(Pid) ->
+            lager:info("docker_fsm: notifying mobile_de_fsm that Kafka is ready"),
+            mobile_de_fsm:kafka_ready()
     end.
