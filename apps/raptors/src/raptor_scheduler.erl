@@ -127,6 +127,12 @@ handle_info(periodic_cycle, State) ->
     save_state(NewState),
     {noreply, NewState};
 
+%% Timer за delayed start на следващ сървиз
+handle_info(start_next_delayed, State) ->
+    lager:debug("raptor_scheduler: delayed timer fired, starting next service"),
+    NewState = start_next_service(State),
+    {noreply, NewState};
+
 handle_info(_Info, State) ->
     {noreply, State}.
 
@@ -257,24 +263,33 @@ start_next_service(State = #state{services_queue = [ServiceName | Rest]}) ->
             lager:warning("raptor_scheduler: service ~s failed to start, not updating timing", [ServiceName])
     end,
 
-    %% ROTATE queue: преместване на изпълнения сървиз в края
-    %% Това гарантира че на следващия цикъл ще стартира следващия сървиз
-    RotatedQueue = Rest ++ [ServiceName],
-
     %% Save result
     NewResults = [Normalized | State1#state.results],
     NewState = State1#state{
-        services_queue = RotatedQueue,  % ВАЖНО: ротирана опашка!
+        services_queue = Rest,  % Премахваме изпълнения от опашката
         results = NewResults, 
         current_service = undefined
     },
     
-    %% Send summary (само за текущия изпълнен сървиз)
-    send_final_summary(NewState),
     save_state(NewState),
     
-    %% Schedule next cycle (след periodic_interval_ms ще стартира СЛЕДВАЩИЯ от опашката)
-    schedule_next_periodic_cycle(NewState).
+    %% Проверка дали има още сървизи в опашката
+    case Rest of
+        [] ->
+            %% Всички сървизи завършени - праща summary и планира следващ цикъл
+            lager:info("raptor_scheduler: all services completed in this cycle"),
+            send_final_summary(NewState),
+            clear_state(NewState),
+            schedule_next_periodic_cycle(NewState);
+        _ ->
+            %% Има още сървизи - чака random 0-600 сек (0-10 мин) преди следващия
+            RandomDelaySeconds = rand:uniform(601) - 1,  % 0-600 секунди
+            DelayMs = RandomDelaySeconds * 1000,
+            lager:info("raptor_scheduler: ~p services remaining, waiting ~p seconds before next", 
+                      [length(Rest), RandomDelaySeconds]),
+            erlang:send_after(DelayMs, self(), start_next_delayed),
+            NewState
+    end.
 
 %% Праща обобщена Slack нотификация в края
 send_final_summary(#state{results = Results, started_at = StartedAt}) ->
