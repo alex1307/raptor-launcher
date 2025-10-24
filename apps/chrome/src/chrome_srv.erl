@@ -15,13 +15,14 @@
 %% ----------------------------------------------------------------------------
 %% Chrome service - GenServer wrapper
 %% ----------------------------------------------------------------------------
--spec start_link() -> {ok, pid()} | {error, any()}.
+-spec start_link() -> {ok, pid()} | ignore | {error, any()}.
 start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
     
 -spec stop(pid()) -> ok.
 stop(Pid) ->
-    gen_server:call(Pid, stop).
+    ok = gen_server:call(Pid, stop),
+    ok.
 
 -spec status(pid()) -> {ok, map()} | {error, string()}.
 status(Pid) ->

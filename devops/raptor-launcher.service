@@ -1,0 +1,37 @@
+[Unit]
+Description=Raptor Launcher - Erlang Service Orchestrator
+After=network.target postgresql.service docker.service
+Wants=postgresql.service docker.service
+
+[Service]
+Type=simple
+User=matkat
+Group=matkat
+WorkingDirectory=/home/matkat/raptor-launcher
+Environment="HOME=/home/matkat"
+
+# Load environment variables from files
+EnvironmentFile=/home/matkat/raptor-launcher/devops/env/raptor.env
+EnvironmentFile=-/home/matkat/raptor-launcher/devops/env/.env
+
+# Start command - using Erlang release (not interactive shell!)
+ExecStart=/home/matkat/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launcher foreground
+
+# Restart policy
+Restart=on-failure
+RestartSec=10
+KillMode=process
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=raptor-launcher
+
+# Security settings (optional but recommended)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

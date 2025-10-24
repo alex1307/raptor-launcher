@@ -55,40 +55,86 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec is_kafka_running() -> boolean().
 is_kafka_running() ->
-    gen_server:call(?MODULE, {is_kafka_alive}).
+    Result = gen_server:call(?MODULE, {is_kafka_alive}),
+    case Result of
+        true -> true;
+        false -> false;
+        _ -> false
+    end.
 
 -spec list_kafka_topics() -> [string()].
 list_kafka_topics() ->
-    gen_server:call(?MODULE, {list_topics}).
+    Result = gen_server:call(?MODULE, {list_topics}),
+    case Result of
+        {ok, Topics} when is_list(Topics) -> 
+            % eqwalizer:fixme - Topics are strings from YAML config
+            Topics;
+        _ -> []
+    end.
 
 -spec describe_kafka_topic(string()) -> map() | {error, term()}.
 describe_kafka_topic(Topic) ->
-    gen_server:call(?MODULE, {describe_topic, Topic}).
+    Result = gen_server:call(?MODULE, {describe_topic, Topic}),
+    case Result of
+        Map when is_map(Map) -> Map;
+        {error, _} = Error -> Error;
+        _ -> {error, invalid_response}
+    end.
 
 -spec create_kafka_topic(string()) -> ok | {error, term()}.
 create_kafka_topic(Topic) ->
-    gen_server:call(?MODULE, {create_topic, Topic}).
+    Result = gen_server:call(?MODULE, {create_topic, Topic}),
+    case Result of
+        {ok, _Msg} -> ok;  % Success - normalize to ok
+        {error, _} = Error -> Error;
+        _ -> {error, invalid_response}
+    end.
 
 -spec alter_kafka_topic(string()) -> ok | {error, term()}.
 alter_kafka_topic(Topic) ->
-    gen_server:call(?MODULE, {alter_topic, Topic}).
+    Result = gen_server:call(?MODULE, {alter_topic, Topic}),
+    case Result of
+        {ok, _Msg} -> ok;  % Success - normalize to ok
+        {error, _} = Error -> Error;
+        _ -> {error, invalid_response}
+    end.
 
 -spec configure_all_topics() -> ok | {error, term()}.
 configure_all_topics() ->
-    {ok, Topics} = list_kafka_topics(),
-    Configured = lists:map(fun(T) -> 
+    Topics = list_kafka_topics(),  % Returns [string()]
+    lager:info("kafka_srv: configuring ~p topics", [length(Topics)]),
+    
+    Results = lists:map(fun(T) -> 
+        % eqwalizer:fixme - T is string from list_kafka_topics()
+        lager:debug("kafka_srv: checking topic ~s", [T]),
         case describe_kafka_topic(T) of
-            {error, _} -> create_kafka_topic(T);
-            Result -> Result
+            % eqwalizer:fixme
+            {error, _Reason} -> 
+                lager:info("kafka_srv: topic ~s does not exist, creating...", [T]),
+                case create_kafka_topic(T) of
+                    ok -> 
+                        lager:info("kafka_srv: topic ~s created successfully", [T]),
+                        ok;
+                    {error, CreateErr} = Err ->
+                        lager:error("kafka_srv: failed to create topic ~s: ~p", [T, CreateErr]),
+                        Err
+                end;
+            _Map when is_map(_Map) -> 
+                lager:debug("kafka_srv: topic ~s already exists", [T]),
+                ok;
+            Other ->
+                lager:warning("kafka_srv: unexpected describe result for topic ~s: ~p", [T, Other]),
+                {error, {unexpected_describe_result, Other}}
         end 
     end, Topics),
-    IsOK = lists:all(fun(P) -> 
-        case P of 
-            {ok, _} -> true;
-            _ -> false 
-        end
-    end, Configured),
-    case IsOK of
-        true -> ok;
-        false -> {error, misconfigured_topics}
+    
+    % Check if all topics are OK
+    Errors = [R || R <- Results, R =/= ok],
+    case Errors of
+        [] -> 
+            lager:info("kafka_srv: all ~p topics configured successfully", [length(Topics)]),
+            ok;
+        _ -> 
+            lager:error("kafka_srv: failed to configure topics, errors: ~p", [Errors]),
+            {error, {misconfigured_topics, Errors}}
     end.

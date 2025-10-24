@@ -67,26 +67,35 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 
--spec(status() -> string()).
+-spec(status() -> term()).
 status() ->
-    gen_server:call(?MODULE, {status}).
+    gen_server:call(?MODULE, get_services).
 
 -spec(list_services() -> [string()]).
 list_services() ->
-    gen_server:call(?MODULE, {list_services}).
+    Result = gen_server:call(?MODULE, {list_services}),
+    case Result of
+        % eqwalizer:fixme - List contains service names from YAML
+        List when is_list(List) -> List;
+        _ -> []
+    end.
 
 -spec(is_service_running(string()) -> boolean()).
 is_service_running(ServiceName) ->
+    % eqwalizer:fixme - returns boolean from raptors_utils
     gen_server:call(?MODULE, {is_service_running, ServiceName}).
 
 -spec(start_service(string()) -> {ok, string()} | {error, string()}).
 start_service(ServiceName) ->
+    % eqwalizer:fixme - returns {ok, Msg} | {error, Msg} from raptors_utils
     gen_server:call(?MODULE, {start_service, ServiceName}).
 
 -spec(stop_service(string()) -> {ok, string()} | {error, string()}).
 stop_service(ServiceName) ->
+    % eqwalizer:fixme - returns {ok, Msg} | {error, Msg} from raptors_utils
     gen_server:call(?MODULE, {stop_service, ServiceName}).  
 
 -spec(get_services() -> map()).
 get_services() ->
+    % eqwalizer:fixme - returns map from state
     gen_server:call(?MODULE, get_services).
