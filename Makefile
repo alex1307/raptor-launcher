@@ -33,6 +33,21 @@ release-prod:
 	rebar3 clean compile
 	rebar3 as prod release
 
+deploy: release-prod
+	@echo "Creating deployment package..."
+	@mkdir -p /home/matkat/launcher-app
+	@cp -r _build/prod/rel/raptor_launcher/bin/raptor_launcher /home/matkat/launcher-app/
+	@cp -r devops /home/matkat/launcher-app/
+	@echo "Deployment package created in launcher-app/"
+	@echo "To deploy on Ubuntu:"
+	@echo "  1. Copy launcher-app/ to ~/raptor-launcher/"
+	@echo "  2. Edit launcher-app/devops/env/raptor.systemd.env"
+	@echo "  3. Create launcher-app/devops/env/.systemd.env"
+	@echo "  4. Run: sudo launcher-app/devops/install-service.sh"
+
+clean-deploy:
+	rm -rf launcher-app
+
 #
 
 # blank:
@@ -88,7 +103,7 @@ release-prod:
 # 	@echo "          \t - name should match a file in rel/<name>.config"
 # 	@echo "          \t - previous_rel should match a directory under rel/"
 
-.PHONY: build run run-dev run-prod
+.PHONY: build run run-dev run-prod deploy clean-deploy
 
 build:
 	rebar3 compile
