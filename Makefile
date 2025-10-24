@@ -108,3 +108,10 @@ run-prod:
 	source devops/env/.env; \
 	set +a; \
 	rebar3 shell --config config/sys.prod.config
+
+run-release:
+	set -a; \
+	source devops/env/raptor.env; \
+	source devops/env/.env; \
+	set +a; \
+	_build/prod/rel/raptor-launcher/bin/raptor-launcher foreground
