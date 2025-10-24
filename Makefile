@@ -114,4 +114,4 @@ run-release:
 	source devops/env/raptor.env; \
 	source devops/env/.env; \
 	set +a; \
-	_build/prod/rel/raptor-launcher/bin/raptor-launcher foreground
+	_build/prod/rel/raptor_launcher/bin/raptor_launcher foreground
