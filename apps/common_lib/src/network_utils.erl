@@ -13,13 +13,13 @@ check_all() ->
     end.
 
 check_internet() ->
-    case os:cmd("ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo ok || echo fail") of
-        "ok\n" -> ok;
+    case cmd_utils:execute("ping -c 1 8.8.8.8 > /dev/null 2>&1 && echo ok || echo fail") of
+        {ok, _} -> ok;
         _ -> {error, no_internet}
     end.
 
 check_docker_network() ->
-    case os:cmd("docker network ls --format '{{.Name}}' | grep -q raptor_my_network && echo ok || echo fail") of
-        "ok\n" -> ok;
+    case cmd_utils:execute("docker network ls --format '{{.Name}}' | grep -q raptor_my_network && echo ok || echo fail") of
+        {ok, _} -> ok;
         _ -> {error, docker_network_missing}
     end.

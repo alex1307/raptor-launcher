@@ -26,30 +26,43 @@ make release-prod
 ls -la _build/default/rel/raptor_launcher/bin/raptor_launcher
 ```
 
-### 2. Конфигурация на Environment Variables
+### 2. Конфигурация на environment файловете
 
-Провери и редактирай файловете:
+### 2.1. Копирай и редактирай `raptor.systemd.env`
 
 ```bash
-# Systemd environment (САМО KEY=VALUE двойки, без bash syntax)
-nano devops/env/raptor.systemd.env
-
-# Slack webhook и други secrets
-nano devops/env/.env
+cd ~/raptor-launcher/devops/env
+nano raptor.systemd.env
 ```
 
-**Важно:** `raptor.systemd.env` съдържа само прости KEY=VALUE двойки:
-- Без `export` команди
-- Без `if/else` логика
-- Без command substitution `$(...)`
-- Пътищата трябва да са hardcoded за Ubuntu
+Настрой пътищата за Ubuntu:
 
-**За Ubuntu:**
-- `HOME=/home/matkat`
-- `DOCKER_COMPOSE_WORKDIR=/srv/docker`
-- `UBUNTU_RAPTOR_HOME=/home/matkat/mobile-crawler`
-- `UBUNTU_CRAWLER_HOME=/home/matkat/crawler-app`
-- `DATABASE_URL=postgres://admin:1234@localhost:5432/vehicles`
+```bash
+HOME=/home/matkat
+DOCKER_COMPOSE_WORKDIR=/home/matkat/raptor-launcher/devops
+DATABASE_URL=postgresql://username:password@localhost:5432/dbname
+KAFKA_BROKER=localhost:9092
+# ... други настройки
+```
+
+### 2.2. Създай `.systemd.env` файл (secrets)
+
+```bash
+cd ~/raptor-launcher/devops/env
+cp .systemd.env.example .systemd.env
+nano .systemd.env
+```
+
+Добави тайните стойности:
+
+```bash
+COMPOSE_PROJECT_NAME=raptor
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/YOUR_WEBHOOK_URL
+```
+
+**Важно:** Файлът `.systemd.env` не трябва да се commit-ва в git (покрит от `*env` в `.gitignore`)
+
+---
 
 ### 3. Install Systemd Service
 
@@ -61,6 +74,7 @@ sudo ./devops/install-service.sh
 ```
 
 Скриптът ще:
+
 - Копира `raptor-launcher.service` в `/etc/systemd/system/`
 - Reload systemd daemon
 - Enable сървиза да стартира при boot
@@ -126,28 +140,33 @@ sudo journalctl -u raptor-launcher -p err
 ### Service не стартира
 
 1. **Провери дали release е build-нат:**
+
 ```bash
 ls -la ~/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launcher
 ```
 
 Ако липсва:
+
 ```bash
 cd ~/raptor-launcher
 make release-prod
 ```
 
 2. **Провери логовете за грешки:**
+
 ```bash
 sudo journalctl -u raptor-launcher -n 50
 ```
 
 3. **Провери дали PostgreSQL и Docker са running:**
+
 ```bash
 sudo systemctl status postgresql
 sudo systemctl status docker
 ```
 
 4. **Тествай ръчно release-а:**
+
 ```bash
 cd ~/raptor-launcher
 _build/default/rel/raptor_launcher/bin/raptor_launcher console
@@ -156,12 +175,14 @@ _build/default/rel/raptor_launcher/bin/raptor_launcher console
 ### Environment Variables не се зареждат
 
 Провери дали файловете съществуват:
+
 ```bash
 ls -la ~/raptor-launcher/devops/env/raptor.env
 ls -la ~/raptor-launcher/devops/env/.env
 ```
 
 Тествай дали се зареждат:
+
 ```bash
 # От running сървиз
 sudo systemctl show raptor-launcher --property=Environment
@@ -170,6 +191,7 @@ sudo systemctl show raptor-launcher --property=Environment
 ### Permission errors
 
 Увери се че `matkat` user има достъп до всички файлове:
+
 ```bash
 sudo chown -R matkat:matkat ~/raptor-launcher
 chmod +x ~/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launcher
@@ -178,17 +200,20 @@ chmod +x ~/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launche
 ### Service crash-ва след старт
 
 1. **Провери Erlang crash dumps:**
+
 ```bash
 cat ~/raptor-launcher/erl_crash.dump
 ```
 
 2. **Провери application логове:**
+
 ```bash
 tail -f ~/raptor-launcher/log/log/console.log.0
 tail -f ~/raptor-launcher/log/log/error.log.0
 ```
 
 3. **Increase restart delay в service файла:**
+
 ```bash
 sudo nano /etc/systemd/system/raptor-launcher.service
 # Промени: RestartSec=30
@@ -204,6 +229,7 @@ sudo ./devops/uninstall-service.sh
 ```
 
 Или ръчно:
+
 ```bash
 sudo systemctl stop raptor-launcher
 sudo systemctl disable raptor-launcher
@@ -245,20 +271,23 @@ RestartSec=10
 
 ## Development vs Production
 
-### Development (interactive shell):
+### Development (interactive shell)
+
 ```bash
 make run-dev
 # или
 make run-prod
 ```
 
-### Production (systemd service):
+### Production (systemd service)
+
 ```bash
 make release-prod
 sudo systemctl start raptor-launcher
 ```
 
 **Защо не `make run-prod` в systemd?**
+
 - `make run-prod` стартира **interactive Erlang shell** (`rebar3 shell`)
 - Systemd изисква **foreground daemon** (non-interactive)
 - Release mode (`raptor_launcher foreground`) е правилният начин за production deployment
@@ -266,11 +295,13 @@ sudo systemctl start raptor-launcher
 ## Auto-start on Boot
 
 Сървизът е конфигуриран да стартира автоматично при boot с:
+
 ```bash
 sudo systemctl enable raptor-launcher
 ```
 
 За да провериш дали е enabled:
+
 ```bash
 systemctl is-enabled raptor-launcher
 ```

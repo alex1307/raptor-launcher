@@ -21,8 +21,8 @@
 -spec is_docker_alive(maps:map()) -> boolean().
 is_docker_alive(ConfigMap) ->
     Cmd = maps:get("is_alive", maps:get("commands", ConfigMap)),
-    case os:cmd(Cmd) of
-        "ok\n" -> true;
+    case cmd_utils:execute(Cmd) of
+        {ok, _} -> true;
         _ -> false
     end.
 
@@ -32,9 +32,11 @@ is_container_running(ConfigMap, Name) ->
     Commands = maps:get("commands", ConfigMap),
     CmdTemplate = maps:get("is_container_running", Commands),
     Cmd = string:replace(CmdTemplate, "{{container}}", Name, all),
-    case os:cmd(Cmd) of
-        "true\n" -> true;
-        _ -> false
+    case cmd_utils:execute(Cmd) of
+        {ok, Output} -> 
+            string:trim(Output) =:= "true";
+        _ -> 
+            false
     end.
 
 %% Return summary status of Docker and containers

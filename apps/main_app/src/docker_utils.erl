@@ -12,10 +12,10 @@
 %% Проверка дали Docker daemon работи
 -spec is_docker_alive() -> boolean().
 is_docker_alive() ->
-    case os:cmd("docker info > /dev/null 2>&1 && echo ok || echo error") of
-        "ok\n" -> true;
-        Res -> 
-            lager:debug("Response ~p", [Res]),
+    case cmd_utils:execute("docker info > /dev/null 2>&1 && echo ok || echo error") of
+        {ok, _} -> true;
+        _ -> 
+            lager:debug("Docker daemon is not alive"),
             false
     end.
 
@@ -23,11 +23,12 @@ is_docker_alive() ->
 %% Проверка дали даден контейнер е стартиран
 -spec is_container_running(Name :: atom()) -> boolean().
 is_container_running(Name) ->
-    Cmd = "docker inspect -f '{{.State.Running}}' " ++ Name,
-    case os:cmd(Cmd) of
-        "true\n" -> true;
-        "false\n" -> false;
-        _ -> false
+    Cmd = "docker inspect -f '{{.State.Running}}' " ++ atom_to_list(Name),
+    case cmd_utils:execute(Cmd) of
+        {ok, Output} -> 
+            string:trim(Output) =:= "true";
+        _ -> 
+            false
     end.
 
 %% Обобщен статус на docker и ключовите услуги

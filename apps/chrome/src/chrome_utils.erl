@@ -17,9 +17,9 @@ is_chrome_running(ConfigMap) ->
     Port = maps:get("port", ConfigMap),
     Cmd = maps:get("grep_cmd", ConfigMap),
     ActualCmd = string:replace(Cmd, "{{port}}", integer_to_list(Port)),
-    case os:cmd(ActualCmd) of
-        "not found\n" -> false;
-        Output ->
+    case cmd_utils:execute(ActualCmd) of
+        {error, _} -> false;
+        {ok, Output} ->
             not lists:member("not found", string:lowercase(Output))
     end.
 

@@ -59,10 +59,16 @@ status() ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    Map = yml_utils:yml2map("devops/launcher.yml"),
-    DockerMap = maps:get("docker", Map),
-    State = #{yml => DockerMap},
-    {ok, State}.
+    case yml_utils:yml2map("devops/launcher.yml") of
+        Map when is_map(Map) ->
+            DockerMap = maps:get("docker", Map),
+            State = #{yml => DockerMap},
+            {ok, State};
+        {error, Reason} ->
+            {stop, {yml_error, Reason}};
+        _ ->
+            {stop, invalid_yml_format}
+    end.
 
 handle_call(is_docker_running, _From, State=#{yml := Yml}) ->
     IsRunning = docker_utils_yml:is_docker_alive(Yml),

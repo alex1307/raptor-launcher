@@ -116,17 +116,7 @@ parse_kafka_config_output(Output) ->
 -spec run_cmd(CmdIoList :: iolist()) -> ok | {error, string()}.
 run_cmd(CmdIoList) ->
     Cmd = lists:flatten(CmdIoList),
-    Output = os:cmd(Cmd),
-    case string:find(Output, "ERROR") of
-        nomatch -> ok;
-        _ -> 
-            TrimmedOutput = string:trim(Output),
-            case unicode:characters_to_list(TrimmedOutput) of
-                {error, _, _} -> {error, unicode:characters_to_list(TrimmedOutput, latin1)};
-                {incomplete, _, _} -> {error, unicode:characters_to_list(TrimmedOutput, latin1)};
-                Result -> {error, Result}
-            end
-    end.
+    cmd_utils:execute(Cmd).
 
 
 -spec parse_topic_config(list(), string()) -> #topic_config{} | {error, string()}.
