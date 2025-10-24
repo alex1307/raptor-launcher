@@ -36,7 +36,7 @@ release-prod:
 deploy: release-prod
 	@echo "Creating deployment package..."
 	@mkdir -p /home/matkat/launcher-app
-	@cp -r _build/prod/rel/raptor_launcher/ /home/matkat/launcher-app/
+	@cp -r ./_build/prod/rel/raptor_launcher/ /home/matkat/launcher-app
 	@cp -r devops /home/matkat/launcher-app/
 	@echo "Deployment package created in launcher-app/"
 	@echo "To deploy on Ubuntu:"
