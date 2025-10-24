@@ -10,9 +10,8 @@ Group=matkat
 WorkingDirectory=/home/matkat/launcher-app
 Environment="HOME=/home/matkat"
 
-
-# Start command - using Erlang release (not interactive shell!)
-ExecStart=/home/matkat/launcher-app/start_app.sh
+# Start command - using wrapper script
+ExecStart=/home/matkat/launcher-app/bin/start_app.sh
 
 # Restart policy
 Restart=on-failure

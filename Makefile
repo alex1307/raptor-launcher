@@ -35,16 +35,23 @@ release-prod:
 
 deploy: release-prod
 	@echo "Creating deployment package..."
-	@mkdir -p /home/matkat/launcher-app
-	@cp -r ./_build/prod/rel/raptor_launcher/* /home/matkat/launcher-app
-	@cp ./start_app.sh /home/matkat/launcher-app/
-	@cp -r devops /home/matkat/launcher-app/
-	@echo "Deployment package created in launcher-app/"
+	@rm -rf launcher-app
+	@mkdir -p launcher-app/bin
+	@cp -r _build/prod/rel/raptor_launcher launcher-app/
+	@cp start_app.sh launcher-app/bin/
+	@chmod +x launcher-app/bin/start_app.sh
+	@cp -r devops launcher-app/
+	@echo ""
+	@echo "✅ Deployment package created in launcher-app/"
+	@echo ""
 	@echo "To deploy on Ubuntu:"
-	@echo "  1. Copy launcher-app/ to ~/raptor-launcher/"
-	@echo "  2. Edit launcher-app/devops/env/raptor.systemd.env"
-	@echo "  3. Create launcher-app/devops/env/.systemd.env"
-	@echo "  4. Run: sudo launcher-app/devops/install-service.sh"
+	@echo "  1. tar czf launcher-app.tar.gz launcher-app/"
+	@echo "  2. scp launcher-app.tar.gz user@ubuntu:~/"
+	@echo "  3. On Ubuntu: tar xzf launcher-app.tar.gz"
+	@echo "  4. Edit launcher-app/devops/env/raptor.systemd.env"
+	@echo "  5. Create launcher-app/devops/env/.systemd.env"
+	@echo "  6. sudo launcher-app/devops/install-service.sh"
+	@echo ""
 
 clean-deploy:
 	rm -rf launcher-app
