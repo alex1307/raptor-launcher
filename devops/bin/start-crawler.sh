@@ -1,6 +1,26 @@
 #!/usr/bin/env bash
 set -e
 
+# Load environment variables
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_DIR="$SCRIPT_DIR/../env"
+
+if [ -f "$ENV_DIR/raptor.env" ]; then
+  set -a
+  source "$ENV_DIR/raptor.env"
+  set +a
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Loaded raptor.env"
+else
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] WARNING: raptor.env not found at $ENV_DIR/raptor.env"
+fi
+
+if [ -f "$ENV_DIR/.env" ]; then
+  set -a
+  source "$ENV_DIR/.env"
+  set +a
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Loaded .env"
+fi
+
 # check parameter
 if [ -z "$1" ]; then
   echo "Usage: $0 --source <site>"

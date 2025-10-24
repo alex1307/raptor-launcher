@@ -1,4 +1,5 @@
-
+# Force bash shell (required for 'source' command on Ubuntu)
+SHELL := /bin/bash
 
 CUR_DIR = $(CURDIR)
 
