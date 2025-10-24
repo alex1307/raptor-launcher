@@ -1,8 +1,8 @@
 %%% ====================================================================
 %%%  Raptor Scheduler - стартира списък от services последователно
 %%%  
-%%%  Стартира всеки service чрез raptor_service_fsm и чака да приключи
-%%%  преди да стартира следващия.
+%%%  Стартира всеки service чрез raptors_srv:start_service/1
+%%%  и след това продължава със следващия.
 %%%
 %%%  Записва резултатите и праща обобщена Slack нотификация в края.
 %%% ====================================================================
@@ -20,7 +20,6 @@
     name :: atom(),                          %% Името на scheduler-а
     services_queue = [] :: [string()],       %% Опашка от services за изпълнение
     current_service = undefined :: undefined | string(),
-    current_fsm_pid = undefined :: undefined | pid(),
     results = [] :: [{string(), ok | error, term()}],  %% История на резултатите
     started_at = undefined :: undefined | integer(),
     %% Periodic scheduling
@@ -121,62 +120,6 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-%% Получаваме 'DOWN' съобщение когато FSM процесът терминира
-handle_info({'DOWN', _MonitorRef, process, Pid, Reason}, 
-            State = #state{current_fsm_pid = Pid, current_service = ServiceName, periodic_interval_ms = IntervalMs}) ->
-    
-    lager:debug("raptor_scheduler: service ~s finished with reason: ~p", [ServiceName, Reason]),
-    
-    %% Записваме резултата
-    Result = case Reason of
-        normal -> 
-            {ServiceName, ok, success};
-        {shutdown, Error} -> 
-            {ServiceName, error, Error};
-        Other -> 
-            {ServiceName, error, Other}
-    end,
-    
-    %% Ако service-ът завърши успешно, update-ваме timing-а му чрез state_utils
-    case Reason of
-        normal ->
-            Now = erlang:system_time(second),
-            IntervalSeconds = IntervalMs div 1000,
-            state_utils:update_service_timing(ServiceName, IntervalSeconds, Now);
-        _ ->
-            lager:warning("Service ~s failed, not updating timing", [ServiceName])
-    end,
-    
-    NewResults = [Result | State#state.results],
-    NewState = State#state{
-        current_service = undefined,
-        current_fsm_pid = undefined,
-        results = NewResults
-    },
-    
-    %% Запазваме state след промяна
-    save_state(NewState),
-    
-    %% Проверяваме дали има още services
-    case State#state.services_queue of
-        [] ->
-            %% Всички services са приключили
-            lager:debug("raptor_scheduler: all services completed"),
-            send_final_summary(NewState),
-            
-            %% Изтриваме запазения state - вече не е нужен
-            clear_state(NewState),
-            
-            %% Ако е periodic, стартираме timer за следващия цикъл
-            NewState2 = schedule_next_periodic_cycle(NewState),
-            {noreply, NewState2};
-        _ ->
-            %% Стартираме следващия service
-            NewState2 = start_next_service(NewState),
-            save_state(NewState2),
-            {noreply, NewState2}
-    end;
-
 %% Timer за следващ periodic цикъл
 handle_info(periodic_cycle, State) ->
     lager:debug("raptor_scheduler: starting periodic cycle"),
@@ -275,67 +218,94 @@ clear_state(#state{name = Name}) ->
 
 %%% ====================== Helper Functions ============================
 
-%% Стартира следващия service от опашката
+%% Стартира САМО ПЪРВИЯ service от опашката (1 сървиз на цикъл)
+%% След изпълнение ротира опашката - преместване на изпълнения в края
 start_next_service(State = #state{services_queue = []}) ->
-    %% Няма повече services
+    %% Няма services в опашката
+    lager:warning("raptor_scheduler: empty service queue, nothing to start"),
     State;
 
 start_next_service(State = #state{services_queue = [ServiceName | Rest]}) ->
-    lager:debug("raptor_scheduler: starting service: ~s", [ServiceName]),
+    lager:info("raptor_scheduler: starting service: ~s", [ServiceName]),
+
+    %% Mark current service
+    State1 = State#state{
+        current_service = ServiceName
+    },
+
+    %% Start the service directly via raptors_srv
+    StartResult = raptors_srv:start_service(ServiceName),
     
-    %% Стартираме FSM за service-а
-    case raptor_service_fsm:start_link(ServiceName) of
-        {ok, Pid} ->
-            %% Мониторираме FSM процеса
-            erlang:monitor(process, Pid),
-            
-            State#state{
-                services_queue = Rest,
-                current_service = ServiceName,
-                current_fsm_pid = Pid
-            };
-        {error, Reason} ->
-            lager:error("raptor_scheduler: failed to start FSM for ~s: ~p", [ServiceName, Reason]),
-            
-            %% Записваме грешката и продължаваме със следващия
-            Result = {ServiceName, error, {failed_to_start_fsm, Reason}},
-            NewResults = [Result | State#state.results],
-            NewState = State#state{
-                services_queue = Rest,
-                results = NewResults
-            },
-            
-            %% Пробваме следващия service
-            start_next_service(NewState)
-    end.
+    %% Normalize result
+    Normalized = case StartResult of
+        ok -> {ServiceName, ok, success};
+        {ok, _} -> {ServiceName, ok, success};
+        {error, Reason} -> {ServiceName, error, Reason};
+        Other -> {ServiceName, error, {unexpected_start_result, Other}}
+    end,
+
+    %% Update timing on success
+    case Normalized of
+        {_, ok, _} ->
+            Now = erlang:system_time(second),
+            IntervalSeconds = case State1#state.periodic_interval_ms of
+                undefined -> 0;
+                V -> V div 1000
+            end,
+            state_utils:update_service_timing(ServiceName, IntervalSeconds, Now);
+        _ ->
+            lager:warning("raptor_scheduler: service ~s failed to start, not updating timing", [ServiceName])
+    end,
+
+    %% ROTATE queue: преместване на изпълнения сървиз в края
+    %% Това гарантира че на следващия цикъл ще стартира следващия сървиз
+    RotatedQueue = Rest ++ [ServiceName],
+
+    %% Save result
+    NewResults = [Normalized | State1#state.results],
+    NewState = State1#state{
+        services_queue = RotatedQueue,  % ВАЖНО: ротирана опашка!
+        results = NewResults, 
+        current_service = undefined
+    },
+    
+    %% Send summary (само за текущия изпълнен сървиз)
+    send_final_summary(NewState),
+    save_state(NewState),
+    
+    %% Schedule next cycle (след periodic_interval_ms ще стартира СЛЕДВАЩИЯ от опашката)
+    schedule_next_periodic_cycle(NewState).
 
 %% Праща обобщена Slack нотификация в края
 send_final_summary(#state{results = Results, started_at = StartedAt}) ->
     Now = erlang:monotonic_time(millisecond),
-    Duration = (Now - StartedAt) / 1000, %% в секунди
+    Duration = case StartedAt of
+        undefined -> 0.0;
+        _ -> (Now - StartedAt) / 1000
+    end,
     
     Total = length(Results),
     Successful = length([R || {_, ok, _} = R <- Results]),
     Failed = Total - Successful,
     
-    %% Създаваме списък с резултатите
+    %% Създаваме списък с резултатите (само текст, без emoji)
     ResultsList = lists:reverse(Results),
     ResultsText = lists:map(fun({Name, Status, _Info}) ->
         case Status of
-            ok -> io_lib:format("✅ ~s", [Name]);
-            error -> io_lib:format("❌ ~s", [Name])
+            ok -> lists:flatten(io_lib:format("OK: ~s", [Name]));
+            error -> lists:flatten(io_lib:format("FAILED: ~s", [Name]))
         end
     end, ResultsList),
     
-    %% Формираме съобщението
-    Msg = io_lib:format(
-        "📊 *Scheduler Summary*\n"
-        "Total: ~p | Success: ~p | Failed: ~p\n"
-        "Duration: ~.1f seconds\n\n~s",
+    %% Формираме съобщението (без emoji)
+    Msg = lists:flatten(io_lib:format(
+        "Scheduler Summary~n"
+        "Total: ~p | Success: ~p | Failed: ~p~n"
+        "Duration: ~.1f seconds~n~n~s",
         [Total, Successful, Failed, Duration, string:join(ResultsText, "\n")]
-    ),
+    )),
     
-    send_slack_notification(lists:flatten(Msg)).
+    send_slack_notification(Msg).
 
 %% Helper за изпращане на Slack съобщение
 send_slack_notification(Message) ->
