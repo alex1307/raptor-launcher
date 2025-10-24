@@ -11,8 +11,10 @@ WorkingDirectory=/home/matkat/raptor-launcher
 Environment="HOME=/home/matkat"
 
 # Load environment variables from files
-EnvironmentFile=/home/matkat/raptor-launcher/devops/env/raptor.env
-EnvironmentFile=-/home/matkat/raptor-launcher/devops/env/.env
+# Note: systemd EnvironmentFile only supports KEY=VALUE pairs
+# No bash syntax (export, if, $(), etc.)
+EnvironmentFile=/home/matkat/raptor-launcher/devops/env/raptor.systemd.env
+EnvironmentFile=-/home/matkat/raptor-launcher/devops/env/.systemd.env
 
 # Start command - using Erlang release (not interactive shell!)
 ExecStart=/home/matkat/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launcher foreground

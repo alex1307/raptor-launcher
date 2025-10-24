@@ -31,14 +31,22 @@ ls -la _build/default/rel/raptor_launcher/bin/raptor_launcher
 Провери и редактирай файловете:
 
 ```bash
-# Основна конфигурация
-nano devops/env/raptor.env
+# Systemd environment (САМО KEY=VALUE двойки, без bash syntax)
+nano devops/env/raptor.systemd.env
 
 # Slack webhook и други secrets
 nano devops/env/.env
 ```
 
-**Важно:** Увери се че пътищата са правилни за Ubuntu:
+**Важно:** `raptor.systemd.env` съдържа само прости KEY=VALUE двойки:
+- Без `export` команди
+- Без `if/else` логика
+- Без command substitution `$(...)`
+- Пътищата трябва да са hardcoded за Ubuntu
+
+**За Ubuntu:**
+- `HOME=/home/matkat`
+- `DOCKER_COMPOSE_WORKDIR=/srv/docker`
 - `UBUNTU_RAPTOR_HOME=/home/matkat/mobile-crawler`
 - `UBUNTU_CRAWLER_HOME=/home/matkat/crawler-app`
 - `DATABASE_URL=postgres://admin:1234@localhost:5432/vehicles`

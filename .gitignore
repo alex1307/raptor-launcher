@@ -16,6 +16,7 @@ erl_crash.dump
 *.bak
 *~
 devops/env/.env
+devops/env/.systemd.env
 *env
 vs_code/
 .vscode/
