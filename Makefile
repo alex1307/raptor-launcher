@@ -111,7 +111,7 @@ run-prod:
 
 run-release:
 	set -a; \
-	source devops/env/raptor.env; \
-	source devops/env/.env; \
+	source devops/env/raptor.systemd.env; \
+	source devops/env/.systemd.env; \
 	set +a; \
 	_build/prod/rel/raptor_launcher/bin/raptor_launcher foreground
