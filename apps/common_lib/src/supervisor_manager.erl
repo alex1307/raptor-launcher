@@ -54,8 +54,6 @@ init([]) ->
   SupFlags = #{strategy => one_for_one,
     intensity => MaxRestarts,
     period => MaxSecondsBetweenRestarts},
-  lager:info("[~p]:[~p] ~p <<<SYSTEM>>> Supervisor [~p] is started",
-    [?MODULE, ?LINE, self(), ?MODULE]),
   {ok, {SupFlags, []}}.
 
 %%%===================================================================
@@ -96,12 +94,7 @@ start_child(Name, Mod, Fun, Args) ->
         [?MODULE, ?LINE, self(), Name, Mod, Fun, Args]),
       error;
     Child ->
-      lager:info("Starting child: ~p", [Child]),
-      Res = supervisor:start_child(?MODULE, Child),
-      lager:info("[~p]:[~p] ~p <<<SYSTEM>>> Process [~p] is started", [?MODULE, ?LINE, self(), Name]),
-      lager:info("Response ~p", [Res]),
-
-      Res
+      supervisor:start_child(?MODULE, Child)
   end.
 
 start_child(Name, Mod, Fun, Args, Options) ->
@@ -111,12 +104,8 @@ start_child(Name, Mod, Fun, Args, Options) ->
         [?MODULE, ?LINE, self(), Name, Mod, Fun, Args]),
       error;
     Child ->
-      lager:info("Starting child: ~p", [Child]),
-      Res = supervisor:start_child(?MODULE, Child),
-      lager:info("[~p]:[~p] ~p <<<SYSTEM>>> Process [~p] is started", [?MODULE, ?LINE, self(), Name]),
-      lager:info("Response ~p", [Res]),
-
-      Res
+      
+      supervisor:start_child(?MODULE, Child)
   end.
 
 
@@ -124,19 +113,15 @@ start_child(Name, Mod, Fun, Args, Options) ->
 
 
 terminate_child(Name) ->
-  lager:info("[~p]:[~p] ~p <<<SYSTEM>>> Process [~p] is being terminated.",
-    [?MODULE, ?LINE, self(), Name]),
+
   supervisor:terminate_child(?MODULE, Name),
-  supervisor:delete_child(?MODULE, Name),
-  lager:info("[~p]:[~p] ~p <<<SYSTEM>>> Process [~p] is terminated", [?MODULE, ?LINE, self(), Name]).
+  supervisor:delete_child(?MODULE, Name).
 
 -spec(processes(Module :: module()) ->
   {ok, Children :: list()}).
 
 processes(Module) ->
-  lager:info("Start: ~p, Server: ~p", [Module, ?SERVER]),
   Children = supervisor:which_children(?SERVER),
-  lager:info("Children: ~p", [Children]),
   Filtered = lists:filter(
     fun({_Id, _Child, _Type, Modules}) ->
       lists:any(fun(M) -> M == Module end, Modules)

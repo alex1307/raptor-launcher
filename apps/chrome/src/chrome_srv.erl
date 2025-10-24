@@ -49,7 +49,6 @@ init([]) ->
     Map = yml_utils:yml2map("devops/launcher.yml"),
     ChromeMap = maps:get("chrome", Map),
     State = #{yml => ChromeMap},
-    lager:info("Chrome service initialized with config: ~p", [ChromeMap]),
     {ok, State}.
 
 handle_call(stop, _From, State) ->

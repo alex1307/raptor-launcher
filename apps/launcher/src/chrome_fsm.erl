@@ -41,11 +41,9 @@ stop() ->
 callback_mode() -> [state_functions, state_enter].
 
 init([]) ->
-    lager:info("chrome_fsm: initializing"),
     {ok, check_chrome, #state{}}.
 
 terminate(_Reason, _StateName, _Data) ->
-    lager:info("chrome_fsm: terminated"),
     ok.
 
 code_change(_OldVsn, StateName, Data, _Extra) ->
@@ -74,15 +72,12 @@ slack_safe_error(Msg) ->
 check_chrome(enter, _OldState, S) ->
     {keep_state, S, [{state_timeout, 0, check}]};
 check_chrome(state_timeout, check, S) ->
-    lager:info("chrome_fsm: checking if chrome is running"),
     slack_safe_info("🌐 Checking Chrome status..."),
     case chrome_srv:is_chrome_running() of
         true ->
-            lager:info("chrome_fsm: chrome already running"),
             slack_safe_info("✅ Chrome is running"),
             {next_state, ready, S#state{retries = 0}};
         false ->
-            lager:info("chrome_fsm: chrome not running, attempting to start"),
             slack_safe_info("🌐 Starting Chrome browser..."),
             case chrome_srv:start_chrome() of
                 ok ->
@@ -100,7 +95,6 @@ check_chrome(state_timeout, retry, S) ->
 
 %% Chrome is ready, start monitoring
 ready(enter, _OldState, S) ->
-    lager:info("chrome_fsm: chrome ready, starting monitoring"),
     slack_safe_info("🎉 Chrome is ready and monitoring!"),
     {keep_state, S, [{state_timeout, 0, start_monitoring}]};
 ready(state_timeout, start_monitoring, S) ->

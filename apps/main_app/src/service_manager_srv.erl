@@ -61,11 +61,9 @@ handle_call(get_state, _From, State) ->
     {reply, State, State};
 
 handle_call({docker, status}, _From, State) ->
-    lager:info("docker status"),
-    %% example only — real check should delegate to docker_utils
     Now = erlang:system_time(millisecond),
     Old = maps:get(docker, State),
-    case docker_utils_yml:is_docker_alive() of
+    case docker_srv:is_docker_running() of
         false ->
             {reply, down, Old#service_state{status = down, updated_at = Now, last_error = "ERR: Docker daemon NOT running"}};
         true ->

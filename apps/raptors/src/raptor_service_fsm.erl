@@ -66,12 +66,12 @@ wait_for_completion(ServiceName) ->
 callback_mode() -> [state_functions, state_enter].
 
 init([ServiceName]) ->
-    lager:info("[~s] raptor_service_fsm: initializing", [ServiceName]),
+    lager:debug("[~s] raptor_service_fsm: initializing", [ServiceName]),
     State = #state{service_name = ServiceName},
     {ok, starting, State}.
 
 terminate(_Reason, _StateName, #state{service_name = Name}) ->
-    lager:info("[~s] raptor_service_fsm: terminated", [Name]),
+    lager:debug("[~s] raptor_service_fsm: terminated", [Name]),
     ok.
 
 code_change(_OldVsn, StateName, Data, _Extra) ->
@@ -83,16 +83,16 @@ code_change(_OldVsn, StateName, Data, _Extra) ->
 starting(enter, _OldState, S = #state{service_name = Name, retry_count = Retry}) ->
     case Retry of
         0 -> 
-            lager:info("[~s] starting service (first attempt)", [Name]);
+            lager:debug("[~s] starting service (first attempt)", [Name]);
         _ -> 
-            lager:info("[~s] retrying service start (attempt ~p/~p)", [Name, Retry + 1, ?MAX_RETRIES + 1])
+            lager:debug("[~s] retrying service start (attempt ~p/~p)", [Name, Retry + 1, ?MAX_RETRIES + 1])
     end,
     {keep_state, S, [{state_timeout, 0, start}]};
 
 starting(state_timeout, start, S = #state{service_name = Name, retry_count = Retry}) ->
     case start_service(Name) of
         ok ->
-            lager:info("[~s] service started successfully", [Name]),
+            lager:debug("[~s] service started successfully", [Name]),
             Now = erlang:monotonic_time(millisecond),
             NewState = S#state{
                 started_at = Now
@@ -131,7 +131,7 @@ starting(_Type, _Event, S) ->
 
 %% running - service-а работи, мониторираме го
 running(enter, _OldState, S = #state{service_name = Name}) ->
-    lager:info("[~s] service is running, monitoring", [Name]),
+    lager:debug("[~s] service is running, monitoring", [Name]),
     {keep_state, S, [{state_timeout, ?CHECK_INTERVAL_MS, monitor}]};
 
 running(state_timeout, monitor, S = #state{service_name = Name}) ->
@@ -143,7 +143,7 @@ running(state_timeout, monitor, S = #state{service_name = Name}) ->
             {keep_state, S, [{state_timeout, ?CHECK_INTERVAL_MS, monitor}]};
         false ->
             %% Service е приключил успешно
-            lager:info("[~s] service finished successfully", [Name]),
+            lager:debug("[~s] service finished successfully", [Name]),
             send_slack_success(Name),
             {next_state, finished, S}
     end;
@@ -160,7 +160,7 @@ running(_Type, _Event, S) ->
 finished(enter, _OldState, S = #state{service_name = Name, last_error = Error}) ->
     case Error of
         undefined ->
-            lager:info("[~s] service finished successfully, FSM will terminate", [Name]);
+            lager:debug("[~s] service finished successfully, FSM will terminate", [Name]);
         _ ->
             lager:error("[~s] service finished with error: ~p, FSM will terminate", [Name, Error])
     end,
@@ -261,7 +261,7 @@ send_slack_final_failure(ServiceName, Reason, TotalAttempts) ->
 send_slack_notification(Message) ->
     try
         slack_utils:notify_info(Message),
-        lager:info("Slack notification sent: ~s", [Message])
+        lager:debug("Slack notification sent: ~s", [Message])
     catch
         _:Error ->
             lager:warning("Failed to send Slack notification: ~p", [Error])

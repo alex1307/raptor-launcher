@@ -51,11 +51,9 @@ stop() ->
 callback_mode() -> [state_functions, state_enter].
 
 init([]) ->
-    lager:info("docker_fsm: initializing"),
     {ok, check_docker, #state{}}.
 
 terminate(_Reason, _StateName, _Data) ->
-    lager:info("docker_fsm: terminated"),
     ok.
 
 code_change(_OldVsn, StateName, Data, _Extra) ->
@@ -128,13 +126,26 @@ check_docker(state_timeout, check, S0) ->
         false ->
             lager:info("docker_fsm: docker not running, attempting to start"),
             S1 = set_docker_status(S0, down),
-            case docker_srv:start_compose() of
+            %% First, start Docker daemon
+            case docker_srv:start_docker_daemon() of
                 ok ->
-                    S2 = set_docker_status(S1, up),
-                    {next_state, check_kafka, reset_retries(S2)};
-                {error, Reason} ->
-                    lager:error("docker_fsm: failed to start docker: ~p", [Reason]),
-                    ErrorMsg = lists:flatten(io_lib:format("❌ Docker failed: ~p", [Reason])),
+                    lager:info("docker_fsm: docker daemon started, waiting for it to be ready"),
+                    timer:sleep(5000), %% Give Docker daemon time to start
+                    %% Now start compose
+                    case docker_srv:start_compose() of
+                        ok ->
+                            lager:info("docker_fsm: docker compose started successfully"),
+                            S2 = set_docker_status(S1, up),
+                            {next_state, check_kafka, reset_retries(S2)};
+                        {error, ComposeReason} ->
+                            lager:error("docker_fsm: failed to start docker compose: ~p", [ComposeReason]),
+                            ErrorMsg = lists:flatten(io_lib:format("❌ Docker compose failed: ~p", [ComposeReason])),
+                            slack_safe_error(ErrorMsg),
+                            retry_or_fail(check_docker, S1)
+                    end;
+                {error, DaemonReason} ->
+                    lager:error("docker_fsm: failed to start docker daemon: ~p", [DaemonReason]),
+                    ErrorMsg = lists:flatten(io_lib:format("❌ Docker daemon failed: ~p", [DaemonReason])),
                     slack_safe_error(ErrorMsg),
                     retry_or_fail(check_docker, S1)
             end
@@ -146,14 +157,11 @@ check_docker(state_timeout, retry, S) ->
 check_kafka(enter, _OldState, S) ->
     {keep_state, S, [{state_timeout, 0, check}]};
 check_kafka(state_timeout, check, S0) ->
-    lager:info("docker_fsm: checking if kafka is running"),
     case docker_srv:is_container_running("kafka-server") of
         true ->
-            lager:info("docker_fsm: kafka already running"),
             S1 = set_kafka_status(S0, up),
             {next_state, kafka_is_configured, reset_retries(S1)};
         false ->
-            lager:info("docker_fsm: kafka not running, attempting to start"),
             S1 = set_kafka_status(S0, down),
             case docker_srv:start_container("kafka-server") of
                 ok ->
@@ -174,15 +182,11 @@ check_kafka(state_timeout, retry, S) ->
 kafka_is_configured(enter, _OldState, S) ->
     {keep_state, S, [{state_timeout, 0, check}]};
 kafka_is_configured(state_timeout, check, S = #state{kafka_configured = true}) ->
-    lager:info("docker_fsm: kafka configuration already applied, skipping"),
-    %% Notify mobile_de_fsm even if config was already applied
     notify_mobile_de_kafka_ready(),
     {next_state, check_postgres, reset_retries(S)};
 kafka_is_configured(state_timeout, check, S0) ->
-    lager:info("docker_fsm: verifying kafka configuration"),
     case ensure_kafka_configuration() of
         ok ->
-            lager:info("docker_fsm: kafka configuration verified"),
             %% Notify mobile_de_fsm that Kafka is ready
             notify_mobile_de_kafka_ready(),
             S1 = set_kafka_configured(S0, true),
@@ -200,14 +204,11 @@ kafka_is_configured(state_timeout, retry, S) ->
 check_postgres(enter, _OldState, S) ->
     {keep_state, S, [{state_timeout, 0, check}]};
 check_postgres(state_timeout, check, S0) ->
-    lager:info("docker_fsm: checking if postgres is running"),
     case docker_srv:is_container_running("postgres-server") of
         true ->
-            lager:info("docker_fsm: postgres already running"),
             S1 = set_postgres_status(S0, up),
             {next_state, ready, reset_retries(S1)};
         false ->
-            lager:info("docker_fsm: postgres not running, attempting to start"),
             S1 = set_postgres_status(S0, down),
             case docker_srv:start_container("postgres-server") of
                 ok ->
@@ -226,7 +227,6 @@ check_postgres(state_timeout, retry, S) ->
 
 %% All components are ready, start monitoring
 ready(enter, _OldState, S) ->
-    lager:info("docker_fsm: all components ready, starting monitoring"),
     slack_safe_info("🎉 Docker, Kafka, and Postgres are all ready!"),
     {keep_state, S, [{state_timeout, 0, start_monitoring}]};
 ready(state_timeout, start_monitoring, S) ->
@@ -295,6 +295,5 @@ notify_mobile_de_kafka_ready() ->
         undefined ->
             lager:warning("docker_fsm: mobile_de_fsm not started yet, cannot notify");
         Pid when is_pid(Pid) ->
-            lager:info("docker_fsm: notifying mobile_de_fsm that Kafka is ready"),
             mobile_de_fsm:kafka_ready()
     end.

@@ -61,7 +61,7 @@ init_tables() ->
     
     case {StateResult, TimingResult} of
         {{ok, _}, {ok, _}} ->
-            lager:info("state_utils: initialized DETS tables successfully"),
+            lager:debug("state_utils: initialized DETS tables successfully"),
             ok;
         {{error, Reason}, _} ->
             lager:error("state_utils: failed to open scheduler_state table: ~p", [Reason]),
@@ -76,7 +76,7 @@ init_tables() ->
 close_tables() ->
     _ = (catch dets:close(?SCHEDULER_STATE_TABLE)),
     _ = (catch dets:close(?SERVICE_TIMING_TABLE)),
-    lager:info("state_utils: closed DETS tables"),
+    lager:debug("state_utils: closed DETS tables"),
     ok.
 
 %%% ====================== Scheduler State Operations ==================
@@ -102,7 +102,7 @@ save_scheduler_state(Key, Value) ->
 restore_scheduler_state(Key) ->
     case dets:lookup(?SCHEDULER_STATE_TABLE, Key) of
         [{Key, Value}] ->
-            lager:info("state_utils: restored scheduler state for key ~p", [Key]),
+            lager:debug("state_utils: restored scheduler state for key ~p", [Key]),
             {ok, Value};
         [] ->
             lager:debug("state_utils: no scheduler state found for key ~p", [Key]),
@@ -119,7 +119,7 @@ clear_scheduler_state(Key) ->
     case dets:delete(?SCHEDULER_STATE_TABLE, Key) of
         ok ->
             dets:sync(?SCHEDULER_STATE_TABLE),
-            lager:info("state_utils: cleared scheduler state for key ~p", [Key]),
+            lager:debug("state_utils: cleared scheduler state for key ~p", [Key]),
             ok;
         {error, Reason} = Error ->
             lager:error("state_utils: failed to clear scheduler state for key ~p: ~p", 
@@ -155,7 +155,7 @@ update_service_timing(ServiceName, IntervalSeconds, Timestamp)
     case dets:insert(?SERVICE_TIMING_TABLE, {ServiceName, TimingInfo}) of
         ok ->
             dets:sync(?SERVICE_TIMING_TABLE),
-            lager:info("state_utils: updated timing for ~p: last_run=~p, interval=~ps", 
+            lager:debug("state_utils: updated timing for ~p: last_run=~p, interval=~ps", 
                        [ServiceName, Timestamp, IntervalSeconds]),
             ok;
         {error, Reason} = Error ->
@@ -186,7 +186,7 @@ clear_service_timing(ServiceName) ->
     case dets:delete(?SERVICE_TIMING_TABLE, ServiceName) of
         ok ->
             dets:sync(?SERVICE_TIMING_TABLE),
-            lager:info("state_utils: cleared timing for ~p", [ServiceName]),
+            lager:debug("state_utils: cleared timing for ~p", [ServiceName]),
             ok;
         {error, Reason} = Error ->
             lager:error("state_utils: failed to clear timing for ~p: ~p", 
@@ -202,10 +202,10 @@ filter_services_by_timing(Services) ->
     lists:filter(fun(ServiceName) ->
         case should_service_run_internal(ServiceName, Now) of
             {true, Reason} ->
-                lager:info("state_utils: service ~p ready to run (~s)", [ServiceName, Reason]),
+                lager:debug("state_utils: service ~p ready to run (~s)", [ServiceName, Reason]),
                 true;
             {false, Reason} ->
-                lager:info("state_utils: service ~p skipped (~s)", [ServiceName, Reason]),
+                lager:debug("state_utils: service ~p skipped (~s)", [ServiceName, Reason]),
                 false
         end
     end, Services).

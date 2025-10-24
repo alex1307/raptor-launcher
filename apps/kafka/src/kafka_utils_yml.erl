@@ -16,11 +16,8 @@
 -spec list_topics(map()) -> {ok, []} | {error, string()}.
 list_topics(ConfigMap) ->
     TopicMap = maps:get("topics", ConfigMap, []),
-    lager:info("Listing Kafka topics from config: ~p", [TopicMap]),
     Keys = maps:keys(TopicMap),
-    lager:info("Found Kafka topics: ~p", [Keys]),
     Topics = lists:map(fun(K) -> maps:get(K, TopicMap) end, Keys),
-    lager:info("Kafka topics: ~p", [Topics]),
     {ok, Topics}.
 
 %% Describe topic
@@ -75,7 +72,6 @@ exec_kafka_cmd(ConfigMap, Key, Vars) ->
     Cmd2 = string:replace(Cmd1, "{{bootstrap}}", Bootstrap, all),
     Cmd3 = substitute_topic_vars(Cmd2, Vars),
 
-    lager:info("Executing Kafka command (~s): ~s", [Key, Cmd3]),
     cmd_utils:execute(Cmd3).
 
 %% Substitute {{topic}}, {{retention_ms}}, {{retention_bytes}} if present

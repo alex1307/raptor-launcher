@@ -28,7 +28,6 @@ is_chrome_running(ConfigMap) ->
 start_chrome(ConfigMap) ->
     StartScript = maps:get("start_cmd", ConfigMap),
     Cmd = io_lib:format("bash ~s >> /dev/null 2>&1 &", [StartScript]),
-    lager:info("Starting Chrome: ~s", [lists:flatten(Cmd)]),
     cmd_utils:execute(lists:flatten(Cmd)).
 
 %% Спира Chrome
@@ -37,7 +36,6 @@ stop_chrome(ConfigMap) ->
     Cmd = maps:get("stop_cmd", ConfigMap),
     Port = maps:get("port", ConfigMap),
     ActualCmd = string:replace(Cmd, "{{port}}", integer_to_list(Port)),
-    lager:info("Stopping Chrome: ~s", [ActualCmd]),
     cmd_utils:execute(ActualCmd).
 
 %% Обобщен статус
@@ -47,7 +45,6 @@ status(ConfigMap) ->
         true ->
             Port = maps:get("port", ConfigMap),
             VersionUrl = maps:get("version_url", ConfigMap),
-            lager:info("Chrome detected on port ~p, checking version...", [Port]),
             Url = string:replace(VersionUrl, "{{port}}", integer_to_list(Port)),
             case httpc:request(get, {Url, []}, [], []) of
                 {ok, {{_, 200, _}, _, Body}} ->

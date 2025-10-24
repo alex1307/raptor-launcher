@@ -20,11 +20,16 @@ start_link() ->
 %% gen_server callbacks
 %%--------------------------------------------------------------------
 init([]) ->
-    Map = yml_utils:yml2map("devops/launcher.yml"),
-    RaptorServicesMap = maps:get("raptor-services", Map),
-    State = #{yml => RaptorServicesMap},
-    lager:info("Raptor services initialized with config: ~p", [RaptorServicesMap]),
-    {ok, State}.
+    case yml_utils:yml2map("devops/launcher.yml") of
+        Map when is_map(Map) ->
+            RaptorServicesMap = maps:get("raptor-services", Map),
+            State = #{yml => RaptorServicesMap},
+            {ok, State};
+        {error, Reason} ->
+            {stop, {error, {failed_to_load_yml, Reason}}};
+        _ ->
+            {stop, {error, invalid_yml_format}}
+    end.
 
 handle_call({list_services}, _From, State) ->
     #{yml := RaptorServicesMap} = State,

@@ -28,10 +28,10 @@ is_service_running(ConfigMap, ServiceName) ->
             false;
         Service ->
             Cmd = maps:get("grep_cmd", Service),
-            lager:info("Checking if Raptor service ~p is running with command: ~s", [ServiceName, Cmd]),
+            lager:debug("Checking if Raptor service ~p is running with command: ~s", [ServiceName, Cmd]),
             case cmd_utils:execute(Cmd) of
                 {ok, Output} ->
-                    lager:info("Command output: ~s", [Output]),
+                    lager:debug("Command output: ~s", [Output]),
                     string:find(Output,"not found") == nomatch;
                 {error, _Reason} ->
                     false
@@ -54,7 +54,7 @@ start_service(ConfigMap, ServiceName) ->
                     {error, "disabled"};
                 true ->
                     StartScript = maps:get("start_script", Service),
-                    lager:info("Starting Raptor service ~p: ~s", [ServiceName, StartScript]),
+                    lager:debug("Starting Raptor service ~p: ~s", [ServiceName, StartScript]),
                     cmd_utils:execute("bash " ++ StartScript ++ " >> /dev/null 2>&1 &")
             end
     end.
@@ -69,7 +69,7 @@ stop_service(ConfigMap, ServiceName) ->
             {error, "service_not_found"};
         Service ->
             StopScript = maps:get("stop_script", Service),
-            lager:info("Stopping Raptor service ~p: ~s", [ServiceName, StopScript]),
+            lager:debug("Stopping Raptor service ~p: ~s", [ServiceName, StopScript]),
             cmd_utils:execute("bash " ++ StopScript)
     end.
 

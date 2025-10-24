@@ -49,16 +49,16 @@ configure_kafka_topic(Topic) ->
     Exist = topic_exists(Topic),
     case Exist of
         true -> 
-            lager:info("Topic ~s already exists", [Topic]),
+            lager:debug("Topic ~s already exists", [Topic]),
             describe_topic(Topic);
         false ->
             case create_topic(Topic, 1, 1) of
                 ok -> 
-                    lager:info("Topic ~s created successfully", [Topic]),
+                    lager:debug("Topic ~s created successfully", [Topic]),
                     alter_topic_config(Topic),
                     describe_topic(Topic);                    
                 {error, Reason} ->
-                    lager:info("Failed to create topic ~s: ~p", [Topic, Reason]),
+                    lager:debug("Failed to create topic ~s: ~p", [Topic, Reason]),
                     error
             end
     end.

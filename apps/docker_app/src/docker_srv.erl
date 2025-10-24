@@ -62,7 +62,6 @@ init([]) ->
     Map = yml_utils:yml2map("devops/launcher.yml"),
     DockerMap = maps:get("docker", Map),
     State = #{yml => DockerMap},
-    lager:info("Docker service initialized with config: ~p", [DockerMap]),
     {ok, State}.
 
 handle_call(is_docker_running, _From, State=#{yml := Yml}) ->
@@ -72,11 +71,11 @@ handle_call({is_container_running, Container}, _From, State=#{yml := Yml}) ->
     IsRunning = docker_utils_yml:is_container_running(Yml, Container),
     {reply, IsRunning, State};
 handle_call(start, _From, State=#{yml := Yml}) ->
-    docker_utils_yml:start_docker_daemon(Yml),
-    {stop, normal, ok, State};
+    Result = docker_utils_yml:start_docker_daemon(Yml),
+    {reply, Result, State};
 handle_call(stop, _From, State=#{yml := Yml}) ->
-    docker_utils_yml:stop_docker_daemon(Yml),
-    {stop, normal, ok, State};
+    Result = docker_utils_yml:stop_docker_daemon(Yml),
+    {reply, Result, State};
 handle_call({start_container, Container}, _From, State=#{yml := Yml})  ->
     docker_utils_yml:start_container(Yml, Container),
     {reply, ok, State};

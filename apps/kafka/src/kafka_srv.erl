@@ -8,11 +8,16 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    Map = yml_utils:yml2map("devops/launcher.yml"),
-    KafkaMap = maps:get("kafka", Map),
-    State = #{yml => KafkaMap},
-    lager:info("Kafka service initialized with config: ~p", [KafkaMap]),
-    {ok, State}.
+    case yml_utils:yml2map("devops/launcher.yml") of
+        Map when is_map(Map) ->
+            KafkaMap = maps:get("kafka", Map),
+            State = #{yml => KafkaMap},
+            {ok, State};
+        {error, Reason} ->
+            {stop, {yml_parse_error, Reason}};
+        _ ->
+            {stop, invalid_yml_format}
+    end.
 
 handle_call({list_topics}, _From, State) ->
     #{yml := KafkaMap} = State,

@@ -15,7 +15,7 @@ is_docker_alive() ->
     case os:cmd("docker info > /dev/null 2>&1 && echo ok || echo error") of
         "ok\n" -> true;
         Res -> 
-            lager:info("Resspone ~p", [Res]),
+            lager:debug("Response ~p", [Res]),
             false
     end.
 

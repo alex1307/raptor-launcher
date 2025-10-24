@@ -21,7 +21,6 @@
 -spec is_docker_alive(maps:map()) -> boolean().
 is_docker_alive(ConfigMap) ->
     Cmd = maps:get("is_alive", maps:get("commands", ConfigMap)),
-    lager:info("Docker check command: ~s", [Cmd]),
     case os:cmd(Cmd) of
         "ok\n" -> true;
         _ -> false
@@ -57,10 +56,8 @@ exec_container_cmd(ConfigMap, Container, Key) ->
 
     CmdTemplate = maps:get(Key, maps:get("commands", ConfigMap)),
     WorkDir = maps:get("compose_workdir", ConfigMap),
-    lager:info("Command template: ~s", [CmdTemplate]),
     Cmd1 = string:replace(CmdTemplate, "{{container}}", Container, all),
     CmdFinal = string:replace(Cmd1, "{{workdir}}", WorkDir, all),
-    lager:info("Starting Docker container: ~s", [CmdFinal]),
     cmd_utils:execute(CmdFinal).
 
 -spec exec_compose_cmd(maps:map(), string()) -> {ok, string()} | {error, string()}.
@@ -68,7 +65,6 @@ exec_compose_cmd(ConfigMap, Key) ->
     WorkDir = maps:get("compose_workdir", ConfigMap),
     CmdTemplate = maps:get(Key, maps:get("commands", ConfigMap)),
     Cmd = string:replace(CmdTemplate, "{{workdir}}", WorkDir, all),
-    lager:info("Executing docker-compose command: ~s", [Cmd]),
     cmd_utils:execute(Cmd).
 
 -spec start_container(maps:map(), string()) -> {ok, string()} | {error, string()}.
@@ -104,7 +100,6 @@ start_docker_daemon(ConfigMap) ->
         _ -> "start_docker_daemon_unknown"
     end,
     Cmd = maps:get(StartDockerKey, maps:get("commands", ConfigMap)),
-    lager:info("Starting Docker daemon: ~s", [Cmd]),
     cmd_utils:execute(Cmd).
 
 %%--------------------------------------------------------------------
@@ -118,5 +113,4 @@ stop_docker_daemon(ConfigMap) ->
         _ -> "stop_docker_daemon_unknown"
     end,
     Cmd = maps:get(StopDockerKey, maps:get("commands", ConfigMap)),
-    lager:info("Stopping Docker daemon: ~s", [Cmd]),
     cmd_utils:execute(Cmd).
