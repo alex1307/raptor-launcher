@@ -35,12 +35,12 @@ release-prod:
 
 deploy: release-prod
 	@echo "Creating deployment package..."
-	@rm -rf launcher-app
-	@mkdir -p launcher-app/bin
-	@cp -r _build/prod/rel/raptor_launcher launcher-app/
-	@cp start_app.sh launcher-app/bin/
-	@chmod +x launcher-app/bin/start_app.sh
-	@cp -r devops launcher-app/
+	@rm -rf /home/matkat/launcher-app
+	@mkdir -p /home/matkat/launcher-app/bin
+	@cp -r _build/prod/rel/raptor_launcher /home/matkat/launcher-app/
+	@cp start_app.sh /home/matkat/launcher-app/bin/
+	@chmod +x /home/matkat/launcher-app/bin/start_app.sh
+	@cp -r devops /home/matkat/launcher-app/
 	@echo ""
 	@echo "✅ Deployment package created in launcher-app/"
 	@echo ""
