@@ -7,17 +7,12 @@ Wants=postgresql.service docker.service
 Type=simple
 User=matkat
 Group=matkat
-WorkingDirectory=/home/matkat/raptor-launcher/launcher-app/raptor_launcher
+WorkingDirectory=/home/matkat/launcher-app
 Environment="HOME=/home/matkat"
 
-# Load environment variables from files
-# Note: systemd EnvironmentFile only supports KEY=VALUE pairs
-# No bash syntax (export, if, $(), etc.)
-EnvironmentFile=/home/matkat/launcher-app/devops/env/raptor.systemd.env
-EnvironmentFile=-/home/matkat/launcher-app/devops/env/.systemd.env
 
 # Start command - using Erlang release (not interactive shell!)
-ExecStart=/home/matkat/launcher-app/raptor_launcher foreground
+ExecStart=/home/matkat/launcher-app/start_app.sh
 
 # Restart policy
 Restart=on-failure
