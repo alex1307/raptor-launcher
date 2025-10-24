@@ -17,7 +17,7 @@ EnvironmentFile=/home/matkat/raptor-launcher/devops/env/raptor.systemd.env
 EnvironmentFile=-/home/matkat/raptor-launcher/devops/env/.systemd.env
 
 # Start command - using Erlang release (not interactive shell!)
-ExecStart=/home/matkat/raptor-launcher/_build/default/rel/raptor_launcher/bin/raptor_launcher foreground
+ExecStart=/home/matkat/raptor-launcher/_build/prod/rel/raptor_launcher/bin/raptor_launcher foreground
 
 # Restart policy
 Restart=on-failure
