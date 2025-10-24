@@ -50,20 +50,11 @@ kafka:
   commands:
     list_topics: "docker exec {{container}} /opt/kafka/bin/kafka-topics.sh --list --bootstrap-server {{bootstrap}}"
 
-    create_topic:
-      "docker exec {{container}} /opt/kafka/bin/kafka-topics.sh --create \
-      --topic {{topic}} --partitions 1 --replication-factor 1 \
-      --bootstrap-server {{bootstrap}} --if-not-exists"
+    create_topic: "docker exec {{container}} /opt/kafka/bin/kafka-topics.sh --create --topic {{topic}} --partitions 1 --replication-factor 1 --bootstrap-server {{bootstrap}} --if-not-exists"
 
-    alter_topic:
-      "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --alter \
-      --bootstrap-server {{bootstrap}} --entity-type topics \
-      --entity-name {{topic}} \
-      --add-config retention.ms={{retention_ms}},retention.bytes={{retention_bytes}}"
+    alter_topic: "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --alter --bootstrap-server {{bootstrap}} --entity-type topics --entity-name {{topic}} --add-config retention.ms={{retention_ms}},retention.bytes={{retention_bytes}}"
 
-    describe_topic:
-      "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --describe \
-      --bootstrap-server {{bootstrap}} --entity-type topics --entity-name {{topic}}"
+    describe_topic: "docker exec {{container}} /opt/kafka/bin/kafka-configs.sh --describe --bootstrap-server {{bootstrap}} --entity-type topics --entity-name {{topic}}"
 
 chrome:
   enabled: true
