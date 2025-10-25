@@ -11,6 +11,8 @@ WorkingDirectory=/home/matkat/launcher-app
 Environment="HOME=/home/matkat"
 
 # Start command - using wrapper script
+EnvironmentFile=/home/matkat/launcher-app/devops/env/raptor.systemd.env
+EnvironmentFile=-/home/matkat/launcher-app/devops/env/.systemd.env
 ExecStart=/home/matkat/launcher-app/bin/start_app.sh
 
 # Restart policy
