@@ -9,6 +9,8 @@
       kernel,
       stdlib,
       inets,
+      ssl,
+      public_key,
       yamerl,
       lager
   ]},
