@@ -1,8 +1,11 @@
 #!/bin/bash
 
-cd "$(dirname "$0")"
-set -a;
+APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$APP_DIR"
+
+set -a
 source devops/env/raptor.systemd.env
 source devops/env/.systemd.env
-set +a; \
+set +a
+
 exec ./bin/raptor_launcher foreground
