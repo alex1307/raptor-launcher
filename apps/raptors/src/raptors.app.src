@@ -13,6 +13,9 @@
   {applications, [
       kernel,
       stdlib,
+      inets,
+      ssl,
+      public_key,
       lager,
       common_lib
   ]},

@@ -135,6 +135,17 @@ send_message(Message) ->
 % Send HTTP request to Slack
 -spec send_http_request(string(), binary()) -> ok | {error, term()}.
 send_http_request(Url, Payload) ->
+    % Ensure inets is started for httpc
+    case application:ensure_all_started(inets) of
+        {ok, _} -> 
+            do_send_http_request(Url, Payload);
+        {error, Reason} ->
+            lager:warning("Could not start inets: ~p", [Reason]),
+            {error, {inets_not_available, Reason}}
+    end.
+
+-spec do_send_http_request(string(), binary()) -> ok | {error, term()}.
+do_send_http_request(Url, Payload) ->
     Headers = [{"Content-Type", "application/json; charset=utf-8"}],
     HTTPOptions = [{timeout, ?DEFAULT_TIMEOUT}],
     RequestOptions = [],
