@@ -23,11 +23,9 @@ start_link() ->
 stop(Pid) ->
     ok = gen_server:call(Pid, stop),
     ok.
-
 -spec status(pid()) -> {ok, map()} | {error, string()}.
 status(Pid) ->
-    Result = gen_server:call(Pid, status),
-    Result.
+    gen_server:call(Pid, status).
 
 
 -spec start_chrome() -> ok.
@@ -37,7 +35,8 @@ start_chrome() ->
 
 -spec stop_chrome() -> ok.
 stop_chrome() ->
-    gen_server:call(?MODULE, stop_chrome).
+    ok = gen_server:call(?MODULE, stop_chrome),
+    ok.
 
 -spec is_chrome_running() -> boolean().
 is_chrome_running() ->
@@ -51,10 +50,15 @@ status() ->
 
 %% GenServer callbacks
 init([]) ->
-    Map = yml_utils:yml2map(),
-    ChromeMap = maps:get("chrome", Map),
-    State = #{yml => ChromeMap},
-    {ok, State}.
+    case yml_utils:yml2map() of
+        Map when is_map(Map) ->
+            ChromeMap = maps:get("chrome", Map),
+            State = #{yml => ChromeMap},
+            {ok, State};
+        _ ->
+            {stop, {error, invalid_yml_config}}
+    end.
+
 
 handle_call(stop, _From, State) ->
     {stop, normal, ok, State};
