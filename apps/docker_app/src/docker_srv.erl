@@ -59,7 +59,7 @@ status() ->
 %%% gen_server callbacks
 %%%===================================================================
 init([]) ->
-    case yml_utils:yml2map("devops/launcher.yml") of
+    case yml_utils:yml2map() of
         Map when is_map(Map) ->
             DockerMap = maps:get("docker", Map),
             State = #{yml => DockerMap},

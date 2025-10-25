@@ -20,7 +20,7 @@ start_link() ->
 %% gen_server callbacks
 %%--------------------------------------------------------------------
 init([]) ->
-    case yml_utils:yml2map("devops/launcher.yml") of
+    case yml_utils:yml2map() of
         Map when is_map(Map) ->
             RaptorServicesMap = maps:get("raptor-services", Map),
             State = #{yml => RaptorServicesMap},

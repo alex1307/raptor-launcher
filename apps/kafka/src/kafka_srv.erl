@@ -8,7 +8,7 @@ start_link() ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
 
 init([]) ->
-    case yml_utils:yml2map("devops/launcher.yml") of
+    case yml_utils:yml2map() of
         Map when is_map(Map) ->
             KafkaMap = maps:get("kafka", Map),
             State = #{yml => KafkaMap},

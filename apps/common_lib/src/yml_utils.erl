@@ -4,8 +4,8 @@
 %% YAML utilities
 %% ----------------------------------------------------------------------------
 -export([
-    yml2map/1,
-    load_yaml/1,
+    yml2map/0,
+    load_yaml/0,
     to_map/1
 ]).
 
@@ -16,9 +16,11 @@
 %% ----------------------------------------------------------------------------
 
 %% Load YAML file and return as list of maps
--spec load_yaml(string()) -> {ok, term()} | {error, term()}.
-load_yaml(FilePath) ->
+-define(YAML_PATH, "LAUNCHER_YAML_PATH").
+-spec load_yaml() -> {ok, term()} | {error, term()}.
+load_yaml() ->
     try
+        FilePath = os:getenv(?YAML_PATH, "/home/matkat/launcher-app/devops/launcher.yml"),
         YamlData = yamerl_constr:file(FilePath),
         {ok, YamlData}
     catch
@@ -37,10 +39,10 @@ to_map(Other) ->
     Other.
 
 %% Load YAML file and convert to a map
--spec yml2map(string()) -> map() | list() | term() | {error, term()}.
-yml2map(FilePath) ->
+-spec yml2map() -> map() | list() | term() | {error, term()}.
+yml2map() ->
     application:ensure_all_started(yamerl),
-    case load_yaml(FilePath) of
+    case load_yaml() of
         {ok, [Yaml | _]} -> to_map(Yaml);
         {error, Reason} -> {error, Reason}
     end.
