@@ -8,4 +8,4 @@ source devops/env/raptor.systemd.env
 source devops/env/.systemd.env
 set +a
 
-exec ./bin/raptor_launcher foreground
+exec raptor_launcher/bin/raptor_launcher foreground
