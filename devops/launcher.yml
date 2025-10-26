@@ -60,67 +60,67 @@ chrome:
   enabled: true
   port: 9223
   version_url: "http://127.0.0.1:{{port}}/json/version"
-  start_cmd: "devops/bin/start-chrome.sh"
+  start_cmd: "${CHROME_START_SCRIPT}"
   stop_cmd: "pkill -f remote-debugging-port={{port}} || true"
   grep_cmd: "pgrep -fa 'chrome.*remote-debugging-port={{port}}' || echo 'not found'"
 
 raptor-services:
   mobile_de:
     enabled: true
-    start_script: "devops/bin/start-mobile_de.sh"
-    stop_script: "devops/bin/stop-mobile_de.sh"
+    start_script: "${START_MOBILE_DE}"
+    stop_script: "${STOP_MOBILE_DE}"
     grep_cmd: "pgrep -fa 'mobile_de' || echo 'not found'"
 
   crawler-ro:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.ro"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.ro"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-fr:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.fr"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.fr"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-it:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.it"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.it"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-nl:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.nl"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.nl"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-de:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.de"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.de"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-pl:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.pl"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.pl"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-ch:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh autouncle.ch"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} autouncle.ch"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   crawler-bg:
     enabled: true
-    start_script: "devops/bin/start-crawler.sh mobile.bg"
-    stop_script: "devops/bin/stop-crawler.sh"
+    start_script: "${START_CRAWLER} mobile.bg"
+    stop_script: "${STOP_CRAWLER}"
     grep_cmd: "pgrep -fa 'crawler --source' || echo 'not found'"
 
   raptor:
     enabled: true
-    start_script: "devops/bin/start-raptor.sh mobile.de"
-    stop_script: "devops/bin/stop-raptor.sh"
+    start_script: "${START_RAPTOR} mobile.de"
+    stop_script: "${STOP_RAPTOR}"
     grep_cmd: "pgrep -fa 'make start' || echo 'not found'"
