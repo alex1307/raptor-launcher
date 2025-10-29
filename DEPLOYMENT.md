@@ -95,9 +95,35 @@ sudo journalctl -u raptor-launcher -f
 sudo systemctl restart raptor-launcher
 ```
 
+### 6. (Optional) Setup Auto-Update
+
+За автоматични updates при git push:
+
+```bash
+cd ~/launcher-app/devops
+./setup-auto-update.sh
+```
+
+Виж [AUTO_UPDATE.md](devops/AUTO_UPDATE.md) за детайли.
+
+---
+
 ## Актуализация (Update)
 
-### На macOS:
+### Автоматично (Препоръчано)
+
+След като си setup-нал auto-update (стъпка 6), просто:
+
+```bash
+# На macOS:
+git push
+
+# На Ubuntu: автоматично ще се обнови след максимум 10 минути
+```
+
+### Ръчно
+
+#### На macOS:
 
 ```bash
 cd ~/raptor-launcher
