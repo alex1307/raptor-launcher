@@ -75,6 +75,7 @@ check_chrome(state_timeout, check, S) ->
     slack_safe_info("🌐 Checking Chrome status..."),
     case chrome_srv:is_chrome_running() of
         true ->
+            lager:info("chrome_fsm: chrome already running"),
             slack_safe_info("✅ Chrome is running"),
             {next_state, ready, S#state{retries = 0}};
         false ->
@@ -95,6 +96,7 @@ check_chrome(state_timeout, retry, S) ->
 
 %% Chrome is ready, start monitoring
 ready(enter, _OldState, S) ->
+    lager:info("chrome_fsm: chrome ready, starting monitoring"),
     slack_safe_info("🎉 Chrome is ready and monitoring!"),
     {keep_state, S, [{state_timeout, 0, start_monitoring}]};
 ready(state_timeout, start_monitoring, S) ->
