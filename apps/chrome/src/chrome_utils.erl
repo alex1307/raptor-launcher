@@ -15,27 +15,23 @@
 -spec is_chrome_running(map()) -> boolean().
 is_chrome_running(ConfigMap) ->
     Cmd = maps:get("grep_cmd", ConfigMap),
-    lager:info("Executing Chrome grep command: ~s", [Cmd]),
-    case cmd_utils:execute(Cmd) of
-        {error, Err} -> {
-            lager:error("Error checking Chrome process: ~p", [Err]),
-            false
-        };
-        {ok, Output} ->
-            %% Проверяваме дали "not found" НЕ Е в output-a (като substring)
-            %% Ако pgrep намери процеси, те са изброени; ако не - има "not found"
-            LowerOutput = string:lowercase(Output),
-            lager:info("Chrome grep output: ~s", [LowerOutput]),
-            case string:find(LowerOutput, "not found") of
-                nomatch ->
-                    % Chrome работи
-                    lager:info("Chrome is running."),
-                    true;
-                _ ->
-                    % Chrome не работи
-                    lager:info("Chrome is not running."),
-                    false
-            end
+    Result = cmd_utils:execute(Cmd),
+    
+    %% cmd_utils може да върне {error, Output} ако output съдържа "error" в текста
+    %% (например --enable-crash-reporter флагове в Chrome командите)
+    %% Затова проверяваме и двата случая
+    Output = case Result of
+        {ok, Out} -> Out;
+        {error, Out} -> Out;  % Взимаме output-а дори при "error"
+        _ -> ""
+    end,
+    
+    %% Проверяваме дали "not found" НЕ Е в output-a (като substring)
+    %% Ако pgrep намери процеси, те са изброени; ако не - има "not found"
+    LowerOutput = string:lowercase(Output),
+    case string:find(LowerOutput, "not found") of
+        nomatch -> true;  % Chrome работи - има процеси в output-a
+        _ -> false        % Chrome не работи - output съдържа "not found"
     end.
 
 %% Старт на Chrome
