@@ -15,15 +15,29 @@
 -spec is_chrome_running(map()) -> boolean().
 is_chrome_running(ConfigMap) ->
     Cmd = maps:get("grep_cmd", ConfigMap),
+    lager:info("Executing Chrome grep command: ~s", [Cmd]),
     case cmd_utils:execute(Cmd) of
-        {error, _} -> false;
+        {error, Err} -> {
+            lager:error("Error checking Chrome process: ~p", [Err]),
+            false
+        };
         {ok, Output} ->
             %% Проверяваме дали "not found" НЕ Е в output-a (като substring)
             %% Ако pgrep намери процеси, те са изброени; ако не - има "not found"
             LowerOutput = string:lowercase(Output),
+            lager:info("Chrome grep output: ~s", [LowerOutput]),
             case string:find(LowerOutput, "not found") of
-                nomatch -> true;  % Chrome работи
-                _ -> false        % Chrome не работи
+                nomatch -> {
+                  % Chrome работи
+                    lager:info("Chrome is running."),
+                    true
+                };
+                X -> {
+                    % Chrome не работи
+                        lager:info("Chrome is not running. string:find returned ~p", [X]),
+                        false
+                };
+                  % false        % Chrome не работи
             end
     end.
 
