@@ -27,17 +27,14 @@ is_chrome_running(ConfigMap) ->
             LowerOutput = string:lowercase(Output),
             lager:info("Chrome grep output: ~s", [LowerOutput]),
             case string:find(LowerOutput, "not found") of
-                nomatch -> {
-                  % Chrome работи
+                nomatch ->
+                    % Chrome работи
                     lager:info("Chrome is running."),
-                    true
-                };
-                X -> {
+                    true;
+                _ ->
                     % Chrome не работи
-                        lager:info("Chrome is not running. string:find returned ~p", [X]),
-                        false
-                };
-                  % false        % Chrome не работи
+                    lager:info("Chrome is not running."),
+                    false
             end
     end.
 
