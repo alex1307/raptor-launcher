@@ -41,7 +41,10 @@ stop_chrome() ->
 -spec is_chrome_running() -> boolean().
 is_chrome_running() ->
     Result = gen_server:call(?MODULE, is_chrome_running),
-    erlang:is_boolean(Result) andalso Result.
+    case Result of
+        true -> true;
+        _ -> false
+    end.
 
 -spec status() -> {ok, map()} | {error, string()}.
 status() ->
