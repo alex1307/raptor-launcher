@@ -224,35 +224,43 @@ cleanup_rate_limiter() ->
 %% Check if we can send a message (rate limiting)
 -spec check_rate_limit() -> ok | {error, rate_limited}.
 check_rate_limit() ->
-    Now = erlang:monotonic_time(millisecond),
-    MaxMessages = get_max_messages_per_minute(),
-    
-    case ets:lookup(?RATE_LIMITER_TABLE, window_start) of
-        [{window_start, WindowStart}] ->
-            TimeSinceWindowStart = Now - WindowStart,
+    %% Ensure table exists before any operations
+    case ets:info(?RATE_LIMITER_TABLE) of
+        undefined ->
+            init_rate_limiter(),
+            ok;
+        _ ->
+            Now = erlang:monotonic_time(millisecond),
+            MaxMessages = get_max_messages_per_minute(),
             
-            if
-                TimeSinceWindowStart > ?RATE_LIMIT_WINDOW_MS ->
-                    %% New window - reset counter
-                    ets:insert(?RATE_LIMITER_TABLE, {message_count, 1}),
-                    ets:insert(?RATE_LIMITER_TABLE, {window_start, Now}),
-                    ok;
-                true ->
-                    %% Still in same window - check count
-                    [{message_count, Count}] = ets:lookup(?RATE_LIMITER_TABLE, message_count),
+            case ets:lookup(?RATE_LIMITER_TABLE, window_start) of
+                [{window_start, WindowStart}] ->
+                    TimeSinceWindowStart = Now - WindowStart,
                     
                     if
-                        Count < MaxMessages ->
-                            ets:insert(?RATE_LIMITER_TABLE, {message_count, Count + 1}),
+                        TimeSinceWindowStart > ?RATE_LIMIT_WINDOW_MS ->
+                            %% New window - reset counter
+                            ets:insert(?RATE_LIMITER_TABLE, {message_count, 1}),
+                            ets:insert(?RATE_LIMITER_TABLE, {window_start, Now}),
                             ok;
                         true ->
-                            {error, rate_limited}
-                    end
-            end;
-        [] ->
-            %% No window - initialize
-            init_rate_limiter(),
-            ok
+                            %% Still in same window - check count
+                            [{message_count, Count}] = ets:lookup(?RATE_LIMITER_TABLE, message_count),
+                            
+                            if
+                                Count < MaxMessages ->
+                                    ets:insert(?RATE_LIMITER_TABLE, {message_count, Count + 1}),
+                                    ok;
+                                true ->
+                                    {error, rate_limited}
+                            end
+                    end;
+                [] ->
+                    %% No window data - initialize
+                    ets:insert(?RATE_LIMITER_TABLE, {message_count, 1}),
+                    ets:insert(?RATE_LIMITER_TABLE, {window_start, Now}),
+                    ok
+            end
     end.
 
 
