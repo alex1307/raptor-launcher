@@ -58,11 +58,10 @@ kafka:
 
 chrome:
   enabled: true
-  port: 9223
-  version_url: "http://127.0.0.1:{{port}}/json/version"
+  version_url: "http://127.0.0.1:9223/json/version"
   start_cmd: "${CHROME_START_SCRIPT}"
-  stop_cmd: "pkill -f remote-debugging-port={{port}} || true"
-  grep_cmd: "pgrep -fa 'chrome.*remote-debugging-port={{port}}' || echo 'not found'"
+  stop_cmd: "pkill -f remote-debugging-port=9223 || true"
+  grep_cmd: "pgrep -fa 'chrome.*remote-debugging-port=9223' || echo 'not found'"
 
 raptor-services:
   mobile_de:

@@ -14,10 +14,8 @@
 %% Проверява дали Chrome процесът е активен (grep/pgrep команда)
 -spec is_chrome_running(map()) -> boolean().
 is_chrome_running(ConfigMap) ->
-    Port = maps:get("port", ConfigMap),
     Cmd = maps:get("grep_cmd", ConfigMap),
-    ActualCmd = string:replace(Cmd, "{{port}}", integer_to_list(Port)),
-    case cmd_utils:execute(ActualCmd) of
+    case cmd_utils:execute(Cmd) of
         {error, _} -> false;
         {ok, Output} ->
             not lists:member("not found", string:lowercase(Output))
@@ -34,9 +32,7 @@ start_chrome(ConfigMap) ->
 -spec stop_chrome(map()) -> {ok, string()} | {error, string()}.
 stop_chrome(ConfigMap) ->
     Cmd = maps:get("stop_cmd", ConfigMap),
-    Port = maps:get("port", ConfigMap),
-    ActualCmd = string:replace(Cmd, "{{port}}", integer_to_list(Port)),
-    cmd_utils:execute(ActualCmd).
+    cmd_utils:execute(Cmd).
 
 %% Обобщен статус
 -spec status(map()) -> {ok, map()} | {error, string()}.
