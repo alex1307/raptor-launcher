@@ -101,13 +101,11 @@ starting(state_timeout, start, S = #state{service_name = Name, retry_count = Ret
         {error, Reason} ->
             lager:error("[~s] failed to start service: ~p", [Name, Reason]),
             
-            %% Slack нотификация за грешка
-            send_slack_error(Name, Reason, Retry + 1),
-            
             %% Проверяваме дали можем да retry-нем
             if
                 Retry < ?MAX_RETRIES ->
-                    lager:warning("[~s] will retry after ~p ms", [Name, ?RETRY_DELAY_MS]),
+                    lager:warning("[~s] will retry after ~p ms (attempt ~p/~p)", 
+                                  [Name, ?RETRY_DELAY_MS, Retry + 1, ?MAX_RETRIES]),
                     NewState = S#state{
                         retry_count = Retry + 1,
                         last_error = Reason
@@ -243,12 +241,6 @@ build_status_map(CurrentState, #state{
 %% Праща Slack съобщение при успешно приключване
 send_slack_success(ServiceName) ->
     Msg = io_lib:format("✅ Service *~s* completed successfully", [ServiceName]),
-    send_slack_notification(lists:flatten(Msg)).
-
-%% Праща Slack съобщение при грешка (на всеки retry)
-send_slack_error(ServiceName, Reason, AttemptNum) ->
-    Msg = io_lib:format("⚠️ Service *~s* failed (attempt ~p): ~p", 
-                        [ServiceName, AttemptNum, Reason]),
     send_slack_notification(lists:flatten(Msg)).
 
 %% Праща Slack съобщение при окончателна грешка (след всички retry-та)

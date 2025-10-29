@@ -12,12 +12,19 @@
     notify_success/1,
     is_enabled/0,
     start/0,
-    stop/0
+    stop/0,
+    reset_rate_limiter/0
 ]).
 
 -define(DEFAULT_TIMEOUT, 5000).
 -define(SLACK_API_URL_ENV, "SLACK_WEBHOOK_URL").
 -define(SLACK_ENABLED_ENV, "SLACK_NOTIFICATIONS_ENABLED").
+-define(SLACK_RATE_LIMIT_ENV, "SLACK_MAX_MESSAGES_PER_MINUTE").
+
+%% Rate limiting settings
+-define(DEFAULT_MAX_MESSAGES_PER_MINUTE, 10).  % Default max 10 messages per minute
+-define(RATE_LIMIT_WINDOW_MS, 60000).  % 1 minute window
+-define(RATE_LIMITER_TABLE, slack_rate_limiter).
 
 %% Message types with emoji prefixes
 -define(INFO_PREFIX, "ℹ️").
@@ -27,13 +34,21 @@
 
 %%% ====================== API =========================================
 
-% Start the HTTP client (if needed)
+% Start the HTTP client and rate limiter
 start() ->
-    application:ensure_all_started(inets).
+    application:ensure_all_started(inets),
+    init_rate_limiter().
 
 % Stop the HTTP client  
 stop() ->
+    cleanup_rate_limiter(),
     application:stop(inets).
+
+% Reset rate limiter (for testing or manual reset)
+-spec reset_rate_limiter() -> ok.
+reset_rate_limiter() ->
+    cleanup_rate_limiter(),
+    init_rate_limiter().
 
 % Check if Slack notifications are enabled
 -spec is_enabled() -> boolean().
@@ -52,7 +67,13 @@ notify(Message) ->
             lager:debug("Slack notifications disabled, message: ~s", [Message]),
             ok;
         true ->
-            send_message(Message)
+            case check_rate_limit() of
+                ok ->
+                    send_message(Message);
+                {error, rate_limited} ->
+                    lager:warning("Slack notification rate limited: ~s", [Message]),
+                    {error, rate_limited}
+            end
     end.
 
 % Send info message with emoji
@@ -162,5 +183,77 @@ do_send_http_request(Url, Payload) ->
             lager:error("HTTP request to Slack failed: ~p", [Reason]),
             {error, {http_request_failed, Reason}}
     end.
+
+%%% ====================== Rate Limiter ===============================
+
+%% Get max messages per minute from environment or use default
+-spec get_max_messages_per_minute() -> pos_integer().
+get_max_messages_per_minute() ->
+    case os:getenv(?SLACK_RATE_LIMIT_ENV) of
+        false -> ?DEFAULT_MAX_MESSAGES_PER_MINUTE;
+        Str ->
+            case string:to_integer(Str) of
+                {Int, ""} when Int > 0 -> Int;
+                _ -> ?DEFAULT_MAX_MESSAGES_PER_MINUTE
+            end
+    end.
+
+%% Initialize rate limiter ETS table
+-spec init_rate_limiter() -> ok.
+init_rate_limiter() ->
+    case ets:info(?RATE_LIMITER_TABLE) of
+        undefined ->
+            ets:new(?RATE_LIMITER_TABLE, [named_table, public, set]),
+            ets:insert(?RATE_LIMITER_TABLE, {message_count, 0}),
+            ets:insert(?RATE_LIMITER_TABLE, {window_start, erlang:monotonic_time(millisecond)}),
+            ok;
+        _ ->
+            ok
+    end.
+
+%% Cleanup rate limiter ETS table
+-spec cleanup_rate_limiter() -> ok.
+cleanup_rate_limiter() ->
+    case ets:info(?RATE_LIMITER_TABLE) of
+        undefined -> ok;
+        _ -> 
+            ets:delete(?RATE_LIMITER_TABLE),
+            ok
+    end.
+
+%% Check if we can send a message (rate limiting)
+-spec check_rate_limit() -> ok | {error, rate_limited}.
+check_rate_limit() ->
+    Now = erlang:monotonic_time(millisecond),
+    MaxMessages = get_max_messages_per_minute(),
+    
+    case ets:lookup(?RATE_LIMITER_TABLE, window_start) of
+        [{window_start, WindowStart}] ->
+            TimeSinceWindowStart = Now - WindowStart,
+            
+            if
+                TimeSinceWindowStart > ?RATE_LIMIT_WINDOW_MS ->
+                    %% New window - reset counter
+                    ets:insert(?RATE_LIMITER_TABLE, {message_count, 1}),
+                    ets:insert(?RATE_LIMITER_TABLE, {window_start, Now}),
+                    ok;
+                true ->
+                    %% Still in same window - check count
+                    [{message_count, Count}] = ets:lookup(?RATE_LIMITER_TABLE, message_count),
+                    
+                    if
+                        Count < MaxMessages ->
+                            ets:insert(?RATE_LIMITER_TABLE, {message_count, Count + 1}),
+                            ok;
+                        true ->
+                            {error, rate_limited}
+                    end
+            end;
+        [] ->
+            %% No window - initialize
+            init_rate_limiter(),
+            ok
+    end.
+
 
 
