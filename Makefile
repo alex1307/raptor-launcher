@@ -39,6 +39,8 @@ deploy: release-prod
 	@mkdir -p /home/matkat/launcher-app/bin
 	@cp -r _build/prod/rel/raptor_launcher /home/matkat/launcher-app/
 	@cp start_app.sh /home/matkat/launcher-app/bin/
+	@cp devops/env/raptor.systemd.env /home/matkat/launcher-app/devops/env/raptor.systemd.env
+	@cp devops/env/.systemd.env /home/matkat/launcher-app/devops/env/.systemd.env
 	@chmod +x /home/matkat/launcher-app/bin/start_app.sh
 	@cp -r devops /home/matkat/launcher-app/
 	@echo ""
