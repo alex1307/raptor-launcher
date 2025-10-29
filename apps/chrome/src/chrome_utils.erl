@@ -18,7 +18,13 @@ is_chrome_running(ConfigMap) ->
     case cmd_utils:execute(Cmd) of
         {error, _} -> false;
         {ok, Output} ->
-            not lists:member("not found", string:lowercase(Output))
+            %% Проверяваме дали "not found" НЕ Е в output-a (като substring)
+            %% Ако pgrep намери процеси, те са изброени; ако не - има "not found"
+            LowerOutput = string:lowercase(Output),
+            case string:find(LowerOutput, "not found") of
+                nomatch -> true;  % Chrome работи
+                _ -> false        % Chrome не работи
+            end
     end.
 
 %% Старт на Chrome
